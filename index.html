@@ -10,25 +10,27 @@
 
   <!-- Menu Lateral -->
   <div class="sidebar">
-    <div class="brand">
-      <div class="logo-icon">🔧</div>
-      <h2 id="logo-empresa">AutoFix</h2>
+    <div class="brand">      <div class="brand-text">
+        <span id="logo-empresa">AutoFix</span>
+        <small>Oficina</small>
+      </div>
     </div>
+
     <nav class="menu">
       <a class="active" onclick="mudar('dash', this)">
-        <span class="icon">📊</span> Dashboard
+        Dashboard
       </a>
       <a onclick="mudar('agenda', this)">
-        <span class="icon">📅</span> Agendamento
+        Agendamentos
       </a>
       <a onclick="mudar('os', this)">
-        <span class="icon">📋</span> Ordens de Serviço
+        Ordem de Serviço
       </a>
       <a onclick="mudar('estoque', this)">
-        <span class="icon">📦</span> Estoque
+        Estoque
       </a>
       <a onclick="mudar('config', this)">
-        <span class="icon">⚙️</span> Configurações
+        Configurações
       </a>
     </nav>
   </div>
@@ -44,33 +46,25 @@
 
       <!-- Métricas em Cards Modernos -->
       <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-icon blue">📅</div>
-          <div class="metric-data">
+        <div class="metric-card">          <div class="metric-data">
             <span class="metric-title">Agendamentos Ativos</span>
             <b id="dash-qtd-agenda" class="metric-value">0</b>
           </div>
         </div>
 
-        <div class="metric-card">
-          <div class="metric-icon purple">📋</div>
-          <div class="metric-data">
+        <div class="metric-card">          <div class="metric-data">
             <span class="metric-title">Total de Ordens (OS)</span>
             <b id="dash-total-os" class="metric-value">0</b>
           </div>
         </div>
 
-        <div class="metric-card warning">
-          <div class="metric-icon red">⚠️</div>
-          <div class="metric-data">
+        <div class="metric-card warning">          <div class="metric-data">
             <span class="metric-title">Itens em Alerta</span>
             <b id="dash-pecas-alerta" class="metric-value">0</b>
           </div>
         </div>
 
-        <div class="metric-card">
-          <div class="metric-icon green">✅</div>
-          <div class="metric-data">
+        <div class="metric-card">          <div class="metric-data">
             <span class="metric-title">OS Concluídas</span>
             <b id="dash-os-concluidas" class="metric-value">0</b>
           </div>
@@ -131,7 +125,8 @@
     <!-- Tela 2: Agendamento -->
     <div id="agenda" class="page">
       <header class="page-header">
-        <h1>Agendamento & Triagem Rápida</h1>
+        <h1>Agendamentos</h1>
+        <p>Gerencie os agendamentos de serviço da oficina de forma prática e rápida.</p>
       </header>
       
       <div class="grid-agendamento">
@@ -213,6 +208,7 @@
     <div id="os" class="page">
       <header class="page-header">
         <h1>Ordens de Serviço</h1>
+        <p>Gerencie as ordens de serviço da oficina de forma prática e eficiente.</p>
       </header>
       
       <div class="filtros">
@@ -270,6 +266,7 @@
     <div id="estoque" class="page">
       <header class="page-header">
         <h1>Controle de Estoque</h1>
+        <p>Gerencie o estoque de peças e produtos da oficina.</p>
       </header>
 
       <form onsubmit="adicionarEstoque(event)" class="form-inline">
@@ -285,7 +282,8 @@
     <!-- Tela 5: Configurações -->
     <div id="config" class="page">
       <header class="page-header">
-        <h1>Configurações da Oficina</h1>
+        <h1>Configurações</h1>
+        <p>Gerencie as configurações da oficina, sistema e preferências do negócio.</p>
       </header>
       
       <form onsubmit="salvarConfiguracoes(event)">

@@ -187,9 +187,9 @@ function renderizarAgendamentos() {
           <b>${ag.nome}</b>
           <span class="badge exec">Agendado</span>
         </div>
-        <p>🚗 ${ag.veiculo || 'Veículo não informado'}${ag.placa ? ` - ${ag.placa}` : ''} - ${ag.tipo}</p>
-        ${ag.cpf ? `<small>👤 CPF: ${ag.cpf}</small>` : ''}
-        <small>📅 ${ag.data}</small>
+        <p>${ag.veiculo || 'Veículo não informado'}${ag.placa ? ` - ${ag.placa}` : ''} - ${ag.tipo}</p>
+        ${ag.cpf ? `<small>CPF: ${ag.cpf}</small>` : ''}
+        <small>${ag.data}</small>
         <button class="btn-deletar" onclick="retirarAgendamento(${indice})">Cancelar agendamento</button>
       </div>
     `;
