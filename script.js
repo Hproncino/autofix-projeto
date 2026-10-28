@@ -56,7 +56,7 @@ function salvarBD() {
     localStorage.setItem('autofix_db', JSON.stringify(AppData));
   } catch (e) {
     console.error('Erro ao salvar no localStorage:', e);
-    alert('Atenção: Não foi possível salvar os dados na memória do navegador.');
+    mostrarAlerta('Atenção: Não foi possível salvar os dados na memória do navegador.');
   }
 }
 
@@ -169,7 +169,7 @@ function salvarConfiguracoes(e) {
 
   salvarBD();
   renderizarTudo();
-  alert("Configurações atualizadas!");
+  mostrarAlerta('Configurações atualizadas!');
 }
 
 // --- AGENDAMENTOS ---
@@ -209,11 +209,11 @@ function salvarAgendamento(e) {
   const defeito = document.getElementById('agDefeito').value;
 
   if (cpf.replace(/\D/g, '').length !== 11) {
-    alert('Informe um CPF válido com 11 números.');
+    mostrarAlerta('Informe um CPF válido com 11 números.');
     return;
   }
   if (tipoSelecionado === 'customizado' && !tipoCustomizado) {
-    alert('Descreva o serviço customizado.');
+    mostrarAlerta('Descreva o serviço customizado.');
     return;
   }
   
@@ -226,7 +226,7 @@ function salvarAgendamento(e) {
   for (const item of itens) {
     const estoque = AppData.estoque.find(registro => registro.id === item.estoqueId);
     if (!estoque || !Number.isInteger(item.quantidade) || item.quantidade < 1 || item.quantidade > estoque.qtd) {
-      alert('Confira as quantidades dos itens selecionados.');
+      mostrarAlerta('Confira as quantidades dos itens selecionados.');
       return;
     }
   }
@@ -262,7 +262,7 @@ function salvarAgendamento(e) {
   alternarServicoCustomizado();
   document.getElementById('agDefeito').value = '';
 
-  alert('Agendamento salvo com sucesso!');
+  mostrarAlerta('Agendamento salvo com sucesso!');
 }
 
 function alternarServicoCustomizado() {
@@ -411,7 +411,7 @@ function salvarItensOS(id) {
   for (const item of itens) {
     const estoque = AppData.estoque.find(registro => registro.id === item.estoqueId);
     if (!estoque || !Number.isInteger(item.quantidade) || item.quantidade < 1 || item.quantidade > estoque.qtd) {
-      alert('Confira as quantidades dos itens selecionados.');
+      mostrarAlerta('Confira as quantidades dos itens selecionados.');
       os.itensEstoque = itensAnteriores;
       descontarItensDoEstoque(os);
       return;
@@ -471,7 +471,7 @@ function concluirAlteracaoStatusOS(os, novoStatus) {
     for (const item of os.itensEstoque || []) {
       const estoque = AppData.estoque.find(registro => registro.id === item.estoqueId);
       if (!estoque || estoque.qtd < item.quantidade) {
-        alert(`Estoque insuficiente para concluir a OS. Confira ${estoque?.nome || 'um dos itens vinculados'}.`);
+        mostrarAlerta(`Estoque insuficiente para concluir a OS. Confira ${estoque?.nome || 'um dos itens vinculados'}.`);
         renderizarOS();
         return;
       }
@@ -487,7 +487,7 @@ function devolverItensAoEstoque(os) {
   const itens = os.itensEstoque || [];
   const registros = itens.map(item => AppData.estoque.find(registro => registro.id === item.estoqueId));
   if (registros.some(registro => !registro)) {
-    alert('Não foi possível devolver os itens: uma peça vinculada não existe mais no estoque.');
+    mostrarAlerta('Não foi possível devolver os itens: uma peça vinculada não existe mais no estoque.');
     return false;
   }
 
@@ -502,12 +502,12 @@ function excluirOS(id) {
   const os = AppData.ordens.find(ordem => ordem.id === id);
   if (!os) return;
 
-  if (os.estoqueBaixado && os.itensEstoque?.length) {
+  if (os.itensEstoque?.length) {
     abrirConfirmacao(
-      `Deseja realmente excluir a OS #${os.id}? Escolha o que fazer com os itens usados.`,
+      `Deseja realmente excluir a OS #${os.id}? Escolha se os itens vinculados devem voltar ao inventário.`,
       () => excluirOSConfirmada(os, true),
       {
-        confirmarTexto: 'Devolver e excluir',
+        confirmarTexto: 'Devolver itens e excluir',
         alternativaTexto: 'Excluir sem devolver',
         aoEscolherAlternativa: () => excluirOSConfirmada(os, false)
       }
@@ -522,7 +522,7 @@ function excluirOS(id) {
 }
 
 function excluirOSConfirmada(os, devolverItens) {
-  if (devolverItens && !devolverItensAoEstoque(os)) return;
+  if (devolverItens && os.estoqueBaixado && !devolverItensAoEstoque(os)) return;
   AppData.ordens = AppData.ordens.filter(ordem => ordem.id !== os.id);
   AppData.agendamentos = AppData.agendamentos.filter(ag =>
     ag.osId !== os.id &&
@@ -536,8 +536,11 @@ function excluirOSConfirmada(os, devolverItens) {
 function abrirConfirmacao(mensagem, aoConfirmar, opcoes = {}) {
   const modal = document.getElementById('modal-confirmacao');
   const acoes = document.getElementById('modal-confirmacao-acoes');
+  document.getElementById('modal-confirmacao-titulo').textContent = opcoes.titulo || 'Confirmar ação';
   document.getElementById('modal-confirmacao-mensagem').textContent = mensagem;
   acoes.innerHTML = '';
+  modal.setAttribute('role', 'dialog');
+  modal.dataset.atualizarOsAoFechar = 'true';
 
   const cancelar = document.createElement('button');
   cancelar.type = 'button';
@@ -573,12 +576,36 @@ function abrirConfirmacao(mensagem, aoConfirmar, opcoes = {}) {
   confirmar.focus();
 }
 
+function mostrarAlerta(mensagem) {
+  const modal = document.getElementById('modal-confirmacao');
+  const acoes = document.getElementById('modal-confirmacao-acoes');
+  document.getElementById('modal-confirmacao-titulo').textContent = 'Aviso';
+  document.getElementById('modal-confirmacao-mensagem').textContent = mensagem;
+  acoes.innerHTML = '';
+  modal.setAttribute('role', 'alertdialog');
+  modal.dataset.atualizarOsAoFechar = 'false';
+
+  const confirmar = document.createElement('button');
+  confirmar.type = 'button';
+  confirmar.className = 'btn-confirmacao';
+  confirmar.textContent = 'Entendi';
+  confirmar.onclick = fecharConfirmacao;
+  acoes.appendChild(confirmar);
+
+  modal.hidden = false;
+  document.body.classList.add('modal-aberto');
+  confirmar.focus();
+}
+
 function fecharConfirmacao() {
   const modal = document.getElementById('modal-confirmacao');
   if (!modal || modal.hidden) return;
+  const atualizarOS = modal.dataset.atualizarOsAoFechar !== 'false';
   modal.hidden = true;
+  modal.setAttribute('role', 'dialog');
+  delete modal.dataset.atualizarOsAoFechar;
   document.body.classList.remove('modal-aberto');
-  renderizarOS();
+  if (atualizarOS) renderizarOS();
 }
 
 function filtrarOS(status, btn) {
@@ -653,12 +680,14 @@ function mudar(id, el) {
 
 function retirarAgendamento(indice) {
   const agendamento = AppData.agendamentos[indice];
-  if (!agendamento || !confirm(`Cancelar o agendamento de ${agendamento.nome}?`)) return;
-  const ordem = agendamento.osId && AppData.ordens.find(os => os.id === agendamento.osId);
-  if (ordem && ordem.status === 'Agendado') ordem.status = 'Cancelado';
-  AppData.agendamentos.splice(indice, 1);
-  salvarBD();
-  renderizarTudo();
+  if (!agendamento) return;
+  abrirConfirmacao(`Cancelar o agendamento de ${agendamento.nome}?`, () => {
+    const ordem = agendamento.osId && AppData.ordens.find(os => os.id === agendamento.osId);
+    if (ordem && ordem.status === 'Agendado') ordem.status = 'Cancelado';
+    AppData.agendamentos.splice(indice, 1);
+    salvarBD();
+    renderizarTudo();
+  }, { titulo: 'Cancelar agendamento', confirmarTexto: 'Cancelar agendamento' });
 }
 
 function renderizarItensAgendamento() {
