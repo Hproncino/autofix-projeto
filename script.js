@@ -31,6 +31,14 @@ const dadosIniciais = {
   contadorOS: 1004
 };
 
+const STATUS_OS = {
+  STAND_BY: 'Stand By',
+  EM_ANDAMENTO: 'Em andamento',
+  CONCLUIDO: 'Concluído - aguardando retirada',
+  ATRASADO: 'Atrasado',
+  CANCELADO: 'Cancelado'
+};
+
 // Leitura Segura do LocalStorage
 let AppData;
 try {
@@ -40,6 +48,10 @@ try {
   console.error('Erro ao ler do localStorage, carregando dados iniciais:', e);
   AppData = dadosIniciais;
 }
+
+let mesCalendario = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let dataCalendarioSelecionada = obterChaveDataCalendario(new Date());
+let filtroOSAtual = 'todos';
 
 if (!AppData.estoqueBaseAdicionado) {
   const idsExistentes = new Set(AppData.estoque.map(item => item.id));
@@ -64,6 +76,10 @@ document.addEventListener('DOMContentLoaded', () => {
   renderizarTudo();
   document.getElementById('agCpf')?.addEventListener('input', formatarCpf);
   document.getElementById('agPlaca')?.addEventListener('input', formatarPlaca);
+  setInterval(atualizarPrazosOS, 60000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) atualizarPrazosOS();
+  });
   document.getElementById('modal-detalhes-os')?.addEventListener('click', event => {
     if (event.target.id === 'modal-detalhes-os') fecharDetalhesOS();
   });
@@ -87,6 +103,21 @@ function renderizarTudo() {
   renderizarItensAgendamento();
 }
 
+function atualizarPrazosOS() {
+  const statusAlterado = AppData.ordens.some(os => {
+    const linha = document.querySelector(`tr[data-os-id="${os.id}"]`);
+    return linha && linha.dataset.status !== obterStatusOS(os);
+  });
+
+  renderizarDashboard();
+  if (statusAlterado) {
+    renderizarOS();
+    renderizarAgendamentos();
+    const modal = document.getElementById('modal-detalhes-os');
+    if (!modal.hidden && modal.dataset.osId) abrirDetalhesOS(Number(modal.dataset.osId));
+  }
+}
+
 // --- DASHBOARD AUTOMÁTICO ---
 function renderizarDashboard() {
   const agendaEl = document.getElementById('dash-qtd-agenda');
@@ -95,49 +126,206 @@ function renderizarDashboard() {
   const concluidasEl = document.getElementById('dash-os-concluidas');
 
   if (agendaEl) agendaEl.innerText = AppData.agendamentos.filter(ag => {
-    const ordem = ag.osId && AppData.ordens.find(os => os.id === ag.osId);
-    return !ordem || ordem.status === 'Agendado';
+    const status = obterStatusAgendamento(ag);
+    return status !== STATUS_OS.CONCLUIDO && status !== STATUS_OS.CANCELADO;
   }).length;
   if (totalOsEl) totalOsEl.innerText = AppData.ordens.length;
 
   const pecasAlerta = AppData.estoque.filter(item => item.qtd < 5).length;
   if (alertaEl) alertaEl.innerText = pecasAlerta;
 
-  const qtdConcluidos = AppData.ordens.filter(os => os.status === 'Concluído').length;
+  const qtdConcluidos = AppData.ordens.filter(os => obterStatusOS(os) === STATUS_OS.CONCLUIDO).length;
   if (concluidasEl) concluidasEl.innerText = qtdConcluidos;
 
   const totalOS = AppData.ordens.length;
-  if (totalOS === 0) {
-    atualizarBarras(0, 0, 0);
-    return;
-  }
+  const percentual = status => totalOS
+    ? Math.round((AppData.ordens.filter(os => obterStatusOS(os) === status).length / totalOS) * 100)
+    : 0;
+  atualizarBarras(
+    percentual(STATUS_OS.STAND_BY),
+    percentual(STATUS_OS.EM_ANDAMENTO),
+    percentual(STATUS_OS.ATRASADO),
+    percentual(STATUS_OS.CONCLUIDO),
+    percentual(STATUS_OS.CANCELADO)
+  );
 
-  const qtdAgendados = AppData.ordens.filter(os => os.status === 'Agendado').length;
-  const qtdCancelados = AppData.ordens.filter(os => os.status === 'Cancelado').length;
-
-  const pctOk = Math.round((qtdConcluidos / totalOS) * 100);
-  const pctExec = Math.round((qtdAgendados / totalOS) * 100);
-  const pctErro = Math.round((qtdCancelados / totalOS) * 100);
-
-  atualizarBarras(pctOk, pctExec, pctErro);
+  renderizarCalendario();
+  renderizarResumoAgendamentos();
 }
 
-function atualizarBarras(ok, exec, erro) {
-  const txtOk = document.getElementById('txt-pct-ok');
-  const txtExec = document.getElementById('txt-pct-exec');
-  const txtErro = document.getElementById('txt-pct-erro');
+function obterChaveDataCalendario(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
 
-  const barOk = document.getElementById('bar-prog-ok');
-  const barExec = document.getElementById('bar-prog-exec');
-  const barErro = document.getElementById('bar-prog-erro');
+function obterDataAgendamento(valor) {
+  const correspondencia = String(valor || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (!correspondencia) return null;
 
-  if (txtOk) txtOk.innerText = `${ok}%`;
-  if (txtExec) txtExec.innerText = `${exec}%`;
-  if (txtErro) txtErro.innerText = `${erro}%`;
+  const dia = Number(correspondencia[1]);
+  const mes = Number(correspondencia[2]);
+  let ano = Number(correspondencia[3]);
+  if (ano < 100) ano += 2000;
 
-  if (barOk) barOk.style.width = `${ok}%`;
-  if (barExec) barExec.style.width = `${exec}%`;
-  if (barErro) barErro.style.width = `${erro}%`;
+  const data = new Date(ano, mes - 1, dia);
+  if (data.getFullYear() !== ano || data.getMonth() !== mes - 1 || data.getDate() !== dia) return null;
+  return data;
+}
+
+function obterStatusBaseOS(os) {
+  if (!os) return STATUS_OS.STAND_BY;
+  if (os.status === 'Agendado') return STATUS_OS.STAND_BY;
+  if (os.status === 'Concluído') return STATUS_OS.CONCLUIDO;
+  return os.status || STATUS_OS.STAND_BY;
+}
+
+function obterStatusOS(os, momento = new Date()) {
+  const status = obterStatusBaseOS(os);
+  if (status === STATUS_OS.CONCLUIDO || status === STATUS_OS.CANCELADO || !os.prazoConclusao) return status;
+
+  const prazo = new Date(os.prazoConclusao);
+  return !Number.isNaN(prazo.getTime()) && prazo < momento ? STATUS_OS.ATRASADO : status;
+}
+
+function obterStatusAgendamento(agendamento) {
+  const os = AppData.ordens.find(ordem => ordem.id === agendamento.osId);
+  return os ? obterStatusOS(os) : STATUS_OS.STAND_BY;
+}
+
+function atualizarBarras(standBy, emAndamento, atrasadas, concluidas, canceladas) {
+  const valores = [
+    ['standby', standBy],
+    ['exec', emAndamento],
+    ['atrasado', atrasadas],
+    ['ok', concluidas],
+    ['erro', canceladas]
+  ];
+
+  valores.forEach(([chave, percentual]) => {
+    const texto = document.getElementById(`txt-pct-${chave}`);
+    const barra = document.getElementById(`bar-prog-${chave}`);
+    if (texto) texto.innerText = `${percentual}%`;
+    if (barra) barra.style.width = `${percentual}%`;
+  });
+}
+
+function renderizarCalendario() {
+  const mesEl = document.getElementById('dash-calendario-mes');
+  const calendarioEl = document.getElementById('dash-calendario');
+  const eventosEl = document.getElementById('dash-calendario-eventos');
+  if (!mesEl || !calendarioEl || !eventosEl) return;
+
+  const nomeMes = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(mesCalendario);
+  mesEl.textContent = nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1);
+
+  const agendamentosPorDia = new Map();
+  AppData.agendamentos.forEach(agendamento => {
+    const data = obterDataAgendamento(agendamento.data);
+    if (!data) return;
+    const chave = obterChaveDataCalendario(data);
+    agendamentosPorDia.set(chave, [...(agendamentosPorDia.get(chave) || []), agendamento]);
+  });
+
+  const diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  const inicioMes = new Date(mesCalendario.getFullYear(), mesCalendario.getMonth(), 1);
+  const quantidadeDias = new Date(mesCalendario.getFullYear(), mesCalendario.getMonth() + 1, 0).getDate();
+  const deslocamentoInicio = (inicioMes.getDay() + 6) % 7;
+  const quantidadeCelulas = Math.ceil((deslocamentoInicio + quantidadeDias) / 7) * 7;
+  const hoje = obterChaveDataCalendario(new Date());
+
+  calendarioEl.innerHTML = diasSemana.map(dia => `<span class="calendario-dia-semana">${dia}</span>`).join('');
+  for (let indice = 0; indice < quantidadeCelulas; indice += 1) {
+    const dia = indice - deslocamentoInicio + 1;
+    if (dia < 1 || dia > quantidadeDias) {
+      calendarioEl.insertAdjacentHTML('beforeend', '<span class="calendario-dia-vazio" aria-hidden="true"></span>');
+      continue;
+    }
+
+    const data = new Date(mesCalendario.getFullYear(), mesCalendario.getMonth(), dia);
+    const chave = obterChaveDataCalendario(data);
+    const agendamentos = agendamentosPorDia.get(chave) || [];
+    const classes = [
+      'calendario-dia',
+      chave === hoje ? 'hoje' : '',
+      chave === dataCalendarioSelecionada ? 'selecionado' : '',
+      agendamentos.length ? 'tem-agendamento' : ''
+    ].filter(Boolean).join(' ');
+    const descricao = agendamentos.length
+      ? `${dia}, ${agendamentos.length} agendamento${agendamentos.length === 1 ? '' : 's'}`
+      : String(dia);
+
+    calendarioEl.insertAdjacentHTML('beforeend', `
+      <button type="button" class="${classes}" onclick="selecionarDiaCalendario('${chave}')" aria-label="${descricao}" aria-pressed="${chave === dataCalendarioSelecionada}">
+        <span>${dia}</span>
+        ${agendamentos.length ? '<i aria-hidden="true"></i>' : ''}
+      </button>
+    `);
+  }
+
+  const agendamentosSelecionados = agendamentosPorDia.get(dataCalendarioSelecionada) || [];
+  const dataSelecionada = new Date(`${dataCalendarioSelecionada}T00:00:00`);
+  const dataLegivel = Number.isNaN(dataSelecionada.getTime())
+    ? 'Dia selecionado'
+    : new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long' }).format(dataSelecionada);
+  eventosEl.innerHTML = `
+    <h4>${dataLegivel}</h4>
+    ${agendamentosSelecionados.length
+      ? agendamentosSelecionados.map(agendamento => {
+        const status = obterStatusAgendamento(agendamento);
+        const classeStatus = obterClasseStatusOS(status);
+        const horario = String(agendamento.data || '').match(/\b\d{1,2}:\d{2}\b/)?.[0] || '';
+        return `
+          <div class="calendario-evento">
+            <span class="calendario-evento-horario">${escaparHtml(horario || '—')}</span>
+            <span class="calendario-evento-cliente">${escaparHtml(agendamento.nome || 'Cliente')}</span>
+            <span class="calendario-evento-status ${classeStatus}">${escaparHtml(status)}</span>
+          </div>
+        `;
+      }).join('')
+      : '<p class="calendario-sem-eventos">Nenhum agendamento neste dia.</p>'}
+  `;
+}
+
+function selecionarDiaCalendario(chave) {
+  dataCalendarioSelecionada = chave;
+  renderizarCalendario();
+}
+
+function mudarMesCalendario(direcao) {
+  mesCalendario = new Date(mesCalendario.getFullYear(), mesCalendario.getMonth() + direcao, 1);
+  dataCalendarioSelecionada = obterChaveDataCalendario(mesCalendario);
+  renderizarCalendario();
+}
+
+function renderizarResumoAgendamentos() {
+  const resumoEl = document.getElementById('dash-resumo-agendamentos');
+  if (!resumoEl) return;
+
+  const resumo = [
+    { status: STATUS_OS.STAND_BY, titulo: 'Stand By', classe: 'standby' },
+    { status: STATUS_OS.EM_ANDAMENTO, titulo: 'Em andamento', classe: 'em-andamento' },
+    { status: STATUS_OS.ATRASADO, titulo: 'Atrasados', classe: 'atrasado' },
+    { status: STATUS_OS.CONCLUIDO, titulo: 'Concluídos', classe: 'concluido' },
+    { status: STATUS_OS.CANCELADO, titulo: 'Cancelados', classe: 'cancelado' }
+  ];
+
+  resumoEl.innerHTML = resumo.map(item => {
+    const quantidade = AppData.agendamentos.filter(agendamento => obterStatusAgendamento(agendamento) === item.status).length;
+    return `
+      <div class="resumo-agendamento-item ${item.classe}">
+        <span class="resumo-agendamento-indicador" aria-hidden="true"></span>
+        <span class="resumo-agendamento-titulo">${item.titulo}</span>
+        <strong>${quantidade}</strong>
+      </div>
+    `;
+  }).join('') + `
+    <div class="resumo-agendamento-total">
+      <span>Total de agendamentos</span>
+      <strong>${AppData.agendamentos.length}</strong>
+    </div>
+  `;
 }
 
 // --- CONFIGURAÇÕES ---
@@ -180,12 +368,13 @@ function renderizarAgendamentos() {
   
   AppData.agendamentos.forEach((ag, indice) => {
     const ordem = ag.osId ? AppData.ordens.find(os => os.id === ag.osId) : null;
-    if (ordem && ordem.status !== 'Agendado') return;
+    if (ordem && obterStatusBaseOS(ordem) !== STATUS_OS.STAND_BY) return;
+    const status = ordem ? obterStatusOS(ordem) : STATUS_OS.STAND_BY;
     container.innerHTML += `
       <div class="card-agenda">
         <div class="agenda-topo">
           <b>${ag.nome}</b>
-          <span class="badge exec">Agendado</span>
+          <span class="badge ${status === STATUS_OS.ATRASADO ? 'erro' : 'exec'}">${escaparHtml(status)}</span>
         </div>
         <p>${ag.veiculo || 'Veículo não informado'}${ag.placa ? ` - ${ag.placa}` : ''} - ${ag.tipo}</p>
         ${ag.cpf ? `<small>CPF: ${ag.cpf}</small>` : ''}
@@ -203,6 +392,7 @@ function salvarAgendamento(e) {
   const veiculo = document.getElementById('agVeiculo').value;
   const placa = document.getElementById('agPlaca').value.trim().toUpperCase();
   const dataHora = document.getElementById('agData').value;
+  const prazoConclusao = document.getElementById('agPrazo').value;
   const tipoSelecionado = document.getElementById('agTipo').value;
   const tipoCustomizado = document.getElementById('agTipoCustomizado').value.trim();
   const tipo = tipoSelecionado === 'customizado' ? tipoCustomizado : tipoSelecionado;
@@ -214,6 +404,10 @@ function salvarAgendamento(e) {
   }
   if (tipoSelecionado === 'customizado' && !tipoCustomizado) {
     mostrarAlerta('Descreva o serviço customizado.');
+    return;
+  }
+  if (!prazoConclusao || new Date(prazoConclusao) <= new Date(dataHora)) {
+    mostrarAlerta('A previsão de conclusão deve ser posterior à data e ao horário do agendamento.');
     return;
   }
   
@@ -244,7 +438,8 @@ function salvarAgendamento(e) {
     cliente: `${nome} (${veiculo} - ${placa})`,
     serviço: `[${tipo}] ${defeito}`,
     emissor: emissorFormatado,
-    status: 'Agendado',
+    status: STATUS_OS.STAND_BY,
+    prazoConclusao,
     itensEstoque: itens,
     estoqueBaixado: true
   });
@@ -257,12 +452,21 @@ function salvarAgendamento(e) {
   document.getElementById('agVeiculo').value = '';
   document.getElementById('agPlaca').value = '';
   document.getElementById('agData').value = '';
+  document.getElementById('agPrazo').value = '';
   document.getElementById('agTipo').value = '';
   document.getElementById('agTipoCustomizado').value = '';
   alternarServicoCustomizado();
   document.getElementById('agDefeito').value = '';
 
   mostrarAlerta('Agendamento salvo com sucesso!');
+}
+
+function obterClasseStatusOS(status) {
+  if (status === STATUS_OS.CONCLUIDO) return 'concluido';
+  if (status === STATUS_OS.CANCELADO) return 'cancelado';
+  if (status === STATUS_OS.ATRASADO) return 'atrasado';
+  if (status === STATUS_OS.EM_ANDAMENTO) return 'em-andamento';
+  return 'standby';
 }
 
 function alternarServicoCustomizado() {
@@ -295,19 +499,29 @@ function renderizarOS() {
   corpo.innerHTML = '';
   
   AppData.ordens.forEach(os => {
-    const classeCor = os.status === 'Concluído' ? 'ok' : os.status === 'Agendado' ? 'exec' : 'erro';
+    const status = obterStatusOS(os);
+    const classeStatus = obterClasseStatusOS(status);
+    const statusEditaveis = [
+      STATUS_OS.STAND_BY,
+      STATUS_OS.EM_ANDAMENTO,
+      STATUS_OS.CONCLUIDO,
+      STATUS_OS.CANCELADO
+    ];
+    const opcoesStatus = status === STATUS_OS.ATRASADO
+      ? `<option value="${STATUS_OS.ATRASADO}" selected disabled>${STATUS_OS.ATRASADO}</option>`
+      : '';
     
     corpo.innerHTML += `
-      <tr data-status="${os.status}" class="linha-os" onclick="abrirDetalhesOS(${os.id})">
+      <tr data-os-id="${os.id}" data-status="${escaparHtml(status)}" class="linha-os" onclick="abrirDetalhesOS(${os.id})">
         <td>#${os.id}</td>
         <td>${os.cliente}</td>
         <td>${os.serviço}${os.itensEstoque?.length ? `<br><small>Itens: ${os.itensEstoque.map(item => `${AppData.estoque.find(reg => reg.id === item.estoqueId)?.nome || 'Item removido'} × ${item.quantidade}`).join(', ')}</small>` : ''}</td>
         <td>${os.emissor}</td>
+        <td>${escaparHtml(formatarPrazoOS(os.prazoConclusao))}</td>
         <td>
-          <select class="select-status ${classeCor}" onclick="event.stopPropagation()" onchange="alterarStatusOS(${os.id}, this)">
-            <option value="Concluído" ${os.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
-            <option value="Agendado" ${os.status === 'Agendado' ? 'selected' : ''}>Agendado</option>
-            <option value="Cancelado" ${os.status === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
+          <select class="select-status status-${classeStatus}" onclick="event.stopPropagation()" onchange="alterarStatusOS(${os.id}, this)">
+            ${opcoesStatus}
+            ${statusEditaveis.map(opcao => `<option value="${opcao}" ${status === opcao ? 'selected' : ''}>${opcao}</option>`).join('')}
           </select>
         </td>
         <td>
@@ -316,6 +530,20 @@ function renderizarOS() {
       </tr>
     `;
   });
+
+  if (filtroOSAtual !== 'todos') {
+    corpo.querySelectorAll('tr').forEach(linha => {
+      linha.style.display = linha.dataset.status === filtroOSAtual ? '' : 'none';
+    });
+  }
+}
+
+function formatarPrazoOS(valor) {
+  if (!valor) return 'Não definido';
+  const data = new Date(valor);
+  return Number.isNaN(data.getTime())
+    ? 'Não definido'
+    : data.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function abrirDetalhesOS(id) {
@@ -340,33 +568,54 @@ function abrirDetalhesOS(id) {
 
   document.getElementById('modal-os-titulo').textContent = `OS #${os.id}`;
   document.getElementById('modal-os-detalhes').innerHTML = `
-    <div class="modal-os-status"><span>Status</span><strong>${escaparHtml(os.status)}</strong></div>
+    <div class="modal-os-status status-${obterClasseStatusOS(obterStatusOS(os))}"><span>Status</span><strong>${escaparHtml(obterStatusOS(os))}</strong></div>
     <div class="modal-os-grade">
       <div><span>Cliente</span><strong>${escaparHtml(cliente)}</strong></div>
       <div><span>CPF</span><strong>${escaparHtml(agendamento?.cpf || 'Não informado')}</strong></div>
       <div><span>Veículo e placa</span><strong>${escaparHtml(veiculo)}</strong></div>
       <div><span>Tipo de serviço</span><strong>${escaparHtml(tipo)}</strong></div>
       <div><span>Data do agendamento</span><strong>${escaparHtml(agendamento?.data || 'Não informado')}</strong></div>
+      <div><span>Previsão de conclusão</span><strong>${escaparHtml(formatarPrazoOS(os.prazoConclusao))}</strong></div>
     </div>
+    <form class="modal-os-bloco prazo-os-form" onsubmit="salvarPrazoOS(event, ${os.id})">
+      <label for="prazo-os-${os.id}">Atualizar previsão de conclusão</label>
+      <div class="prazo-os-controles">
+        <input type="datetime-local" id="prazo-os-${os.id}" value="${escaparHtml(os.prazoConclusao || '')}" required>
+        <button type="submit">Salvar prazo</button>
+      </div>
+    </form>
     <div class="modal-os-bloco"><span>Detalhes / sintomas relatados</span><p>${escaparHtml(defeito)}</p></div>
     <div class="modal-os-bloco">
       <div class="modal-os-bloco-titulo">
         <span>Itens previstos</span>
-        ${os.status === 'Agendado' ? `<button type="button" class="btn-acao-os btn-editar-itens-os" onclick="event.stopPropagation(); editarItensOS(${os.id})">Alterar itens</button>` : ''}
+        ${obterStatusBaseOS(os) === STATUS_OS.STAND_BY ? `<button type="button" class="btn-acao-os btn-editar-itens-os" onclick="event.stopPropagation(); editarItensOS(${os.id})">Alterar itens</button>` : ''}
       </div>
       <p>${itens.length ? escaparHtml(itens.join(', ')) : 'Nenhum item previsto.'}</p>
     </div>
   `;
 
   const modal = document.getElementById('modal-detalhes-os');
+  modal.dataset.osId = String(id);
   modal.hidden = false;
   document.body.classList.add('modal-aberto');
   modal.querySelector('.modal-os-fechar').focus();
 }
 
+function salvarPrazoOS(event, id) {
+  event.preventDefault();
+  const os = AppData.ordens.find(ordem => ordem.id === id);
+  const campoPrazo = document.getElementById(`prazo-os-${id}`);
+  if (!os || !campoPrazo || Number.isNaN(new Date(campoPrazo.value).getTime())) return;
+
+  os.prazoConclusao = campoPrazo.value;
+  salvarBD();
+  renderizarTudo();
+  abrirDetalhesOS(id);
+}
+
 function editarItensOS(id) {
   const os = AppData.ordens.find(ordem => ordem.id === id);
-  if (!os || os.status !== 'Agendado') return;
+  if (!os || obterStatusBaseOS(os) !== STATUS_OS.STAND_BY) return;
 
   const modalDetalhes = document.getElementById('modal-os-detalhes');
   modalDetalhes.innerHTML = `
@@ -399,7 +648,7 @@ function renderizarOpcoesItensOS(os) {
 
 function salvarItensOS(id) {
   const os = AppData.ordens.find(ordem => ordem.id === id);
-  if (!os || os.status !== 'Agendado') return;
+  if (!os || obterStatusBaseOS(os) !== STATUS_OS.STAND_BY) return;
 
   const itens = [...document.querySelectorAll('.item-os-check:checked')].map(check => ({
     estoqueId: Number(check.value),
@@ -451,6 +700,7 @@ function fecharDetalhesOS() {
   const modal = document.getElementById('modal-detalhes-os');
   if (!modal || modal.hidden) return;
   modal.hidden = true;
+  delete modal.dataset.osId;
   document.body.classList.remove('modal-aberto');
 }
 
@@ -458,16 +708,20 @@ function alterarStatusOS(id, selectElement) {
   const novoStatus = selectElement.value;
   const os = AppData.ordens.find(o => o.id === id);
   
-  if (!os || novoStatus === os.status) return;
+  if (!os) return;
+  if (novoStatus === obterStatusBaseOS(os)) {
+    renderizarOS();
+    return;
+  }
   abrirConfirmacao(
-    `Deseja realmente alterar o status da OS #${os.id} de "${os.status}" para "${novoStatus}"?`,
+    `Deseja realmente alterar o status da OS #${os.id} de "${obterStatusOS(os)}" para "${novoStatus}"?`,
     () => concluirAlteracaoStatusOS(os, novoStatus),
     { confirmarTexto: 'Alterar status' }
   );
 }
 
 function concluirAlteracaoStatusOS(os, novoStatus) {
-  if (novoStatus === 'Concluído' && !os.estoqueBaixado) {
+  if (novoStatus === STATUS_OS.CONCLUIDO && !os.estoqueBaixado) {
     for (const item of os.itensEstoque || []) {
       const estoque = AppData.estoque.find(registro => registro.id === item.estoqueId);
       if (!estoque || estoque.qtd < item.quantidade) {
@@ -609,6 +863,7 @@ function fecharConfirmacao() {
 }
 
 function filtrarOS(status, btn) {
+  filtroOSAtual = status;
   document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 
@@ -683,7 +938,7 @@ function retirarAgendamento(indice) {
   if (!agendamento) return;
   abrirConfirmacao(`Cancelar o agendamento de ${agendamento.nome}?`, () => {
     const ordem = agendamento.osId && AppData.ordens.find(os => os.id === agendamento.osId);
-    if (ordem && ordem.status === 'Agendado') ordem.status = 'Cancelado';
+    if (ordem && obterStatusBaseOS(ordem) === STATUS_OS.STAND_BY) ordem.status = STATUS_OS.CANCELADO;
     AppData.agendamentos.splice(indice, 1);
     salvarBD();
     renderizarTudo();

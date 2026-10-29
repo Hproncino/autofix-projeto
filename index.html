@@ -80,21 +80,41 @@
           <div class="progress-list">
             <div class="progress-item">
               <div class="progress-info">
-                <span>Concluídas</span>
-                <strong id="txt-pct-ok">0%</strong>
+                <span>Stand By</span>
+                <strong id="txt-pct-standby">0%</strong>
               </div>
               <div class="barra-fundo">
-                <div id="bar-prog-ok" class="barra-progresso ok" style="width: 0%;"></div>
+                <div id="bar-prog-standby" class="barra-progresso standby" style="width: 0%;"></div>
               </div>
             </div>
 
             <div class="progress-item">
               <div class="progress-info">
-                <span>Agendadas / Em Pátio</span>
+                <span>Em andamento</span>
                 <strong id="txt-pct-exec">0%</strong>
               </div>
               <div class="barra-fundo">
                 <div id="bar-prog-exec" class="barra-progresso exec" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <div class="progress-item">
+              <div class="progress-info">
+                <span>Atrasadas</span>
+                <strong id="txt-pct-atrasado">0%</strong>
+              </div>
+              <div class="barra-fundo">
+                <div id="bar-prog-atrasado" class="barra-progresso atrasado" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <div class="progress-item">
+              <div class="progress-info">
+                <span>Concluídas - aguardando retirada</span>
+                <strong id="txt-pct-ok">0%</strong>
+              </div>
+              <div class="barra-fundo">
+                <div id="bar-prog-ok" class="barra-progresso ok" style="width: 0%;"></div>
               </div>
             </div>
 
@@ -119,6 +139,29 @@
             <span class="status-pill online">Salvamento Ativo (Local)</span>
           </div>
         </div>
+
+      </div>
+
+      <div class="dashboard-agenda-widgets">
+        <section class="widget-card calendario-widget" aria-labelledby="dash-calendario-titulo">
+          <div class="widget-header calendario-cabecalho">
+            <h3 id="dash-calendario-titulo">Calendário de agendamentos</h3>
+            <div class="calendario-navegacao">
+              <button type="button" class="calendario-mes-btn" onclick="mudarMesCalendario(-1)" aria-label="Mês anterior">‹</button>
+              <strong id="dash-calendario-mes"></strong>
+              <button type="button" class="calendario-mes-btn" onclick="mudarMesCalendario(1)" aria-label="Próximo mês">›</button>
+            </div>
+          </div>
+          <div id="dash-calendario" class="calendario-grade" aria-label="Calendário mensal"></div>
+          <div id="dash-calendario-eventos" class="calendario-eventos" aria-live="polite"></div>
+        </section>
+
+        <section class="widget-card resumo-agendamentos-widget" aria-labelledby="dash-resumo-agendamentos-titulo">
+          <div class="widget-header">
+            <h3 id="dash-resumo-agendamentos-titulo">Resumo dos agendamentos</h3>
+          </div>
+          <div id="dash-resumo-agendamentos" class="resumo-agendamentos"></div>
+        </section>
       </div>
     </div>
 
@@ -159,6 +202,11 @@
           <div class="campo-grupo">
             <label for="agData">Data e horário</label>
             <input type="datetime-local" id="agData" required>
+          </div>
+
+          <div class="campo-grupo">
+            <label for="agPrazo">Previsão de conclusão</label>
+            <input type="datetime-local" id="agPrazo" required>
           </div>
 
           <div class="campo-grupo">
@@ -213,8 +261,10 @@
       
       <div class="filtros">
         <button class="btn-filtro active" onclick="filtrarOS('todos', this)">Todos</button>
-        <button class="btn-filtro" onclick="filtrarOS('Concluído', this)">Concluídos</button>
-        <button class="btn-filtro" onclick="filtrarOS('Agendado', this)">Agendados</button>
+        <button class="btn-filtro" onclick="filtrarOS('Stand By', this)">Stand By</button>
+        <button class="btn-filtro" onclick="filtrarOS('Em andamento', this)">Em andamento</button>
+        <button class="btn-filtro" onclick="filtrarOS('Atrasado', this)">Atrasados</button>
+        <button class="btn-filtro" onclick="filtrarOS('Concluído - aguardando retirada', this)">Aguardando retirada</button>
         <button class="btn-filtro" onclick="filtrarOS('Cancelado', this)">Cancelados</button>
       </div>
 
@@ -225,6 +275,7 @@
             <th>Cliente / Veículo</th>
             <th>Serviço Solicitado</th>
             <th>Emitido por</th>
+            <th>Prazo previsto</th>
             <th>Status (Alterar)</th>
             <th>Ações</th>
           </tr>
