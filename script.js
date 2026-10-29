@@ -620,8 +620,18 @@ function editarItensOS(id) {
   const modalDetalhes = document.getElementById('modal-os-detalhes');
   modalDetalhes.innerHTML = `
     <div class="modal-os-bloco">
-      <span>Alterar itens previstos da OS #${os.id}</span>
+      <div class="itens-cabecalho">
+        <div>
+          <span class="itens-legenda">Materiais e peças</span>
+          <strong>Alterar itens previstos da OS #${os.id}</strong>
+        </div>
+        <span id="contador-itens-os" class="contador-itens">${(os.itensEstoque || []).length} selecionados</span>
+      </div>
       <p>Selecione os itens e ajuste as quantidades. O estoque será atualizado ao salvar.</p>
+      <div class="busca-itens">
+        <span class="busca-itens-icone">⌕</span>
+        <input type="search" id="busca-itens-os" placeholder="Buscar item por nome..." oninput="filtrarItens('os', this.value)" autocomplete="off">
+      </div>
       <div id="itens-edicao-os" class="itens-edicao-os">${renderizarOpcoesItensOS(os)}</div>
     </div>
     <div class="acoes-editor-os">
@@ -634,16 +644,24 @@ function editarItensOS(id) {
 function renderizarOpcoesItensOS(os) {
   if (!AppData.estoque.length) return '<small>Nenhum item cadastrado no estoque.</small>';
   const itensAtuais = os.itensEstoque || [];
-  return AppData.estoque.map(item => {
+  const opcoes = AppData.estoque.map(item => {
     const itemAtual = itensAtuais.find(registro => registro.estoqueId === item.id);
     const quantidadeDisponivel = item.qtd + (os.estoqueBaixado ? itemAtual?.quantidade || 0 : 0);
     return `
-      <label class="item-selecao">
-        <span><input type="checkbox" class="item-os-check" value="${item.id}" ${itemAtual ? 'checked' : ''}> ${escaparHtml(item.nome)} (disponível: ${quantidadeDisponivel})</span>
-        <input type="number" class="item-os-qtd" data-item-id="${item.id}" min="1" max="${quantidadeDisponivel}" value="${itemAtual?.quantidade || 1}" aria-label="Quantidade de ${escaparHtml(item.nome)}">
+      <label class="item-selecao ${itemAtual ? 'selecionado' : ''}" data-item-nome="${escaparHtml(item.nome.toLowerCase())}">
+        <span class="item-identificacao">
+          <input type="checkbox" class="item-os-check" value="${item.id}" ${itemAtual ? 'checked' : ''} onchange="atualizarResumoItens('os')">
+          <span class="item-icone">●</span>
+          <span class="item-nome">${escaparHtml(item.nome)}<small>${quantidadeDisponivel} disponíveis</small></span>
+        </span>
+        <span class="item-quantidade">
+          <small>Qtd.</small>
+          <input type="number" class="item-os-qtd" data-item-id="${item.id}" min="1" max="${quantidadeDisponivel}" value="${itemAtual?.quantidade || 1}" aria-label="Quantidade de ${escaparHtml(item.nome)}">
+        </span>
       </label>
     `;
   }).join('');
+  return `<div class="itens-lista">${opcoes}</div>`;
 }
 
 function salvarItensOS(id) {
@@ -953,9 +971,34 @@ function renderizarItensAgendamento() {
     return;
   }
   container.innerHTML = AppData.estoque.map(item => `
-    <label class="item-selecao">
-      <span><input type="checkbox" class="item-agenda-check" value="${item.id}"> ${item.nome} (disponível: ${item.qtd})</span>
-      <input type="number" class="item-agenda-qtd" data-item-id="${item.id}" min="1" max="${item.qtd}" value="1" aria-label="Quantidade de ${item.nome}">
+    <label class="item-selecao" data-item-nome="${escaparHtml(item.nome.toLowerCase())}">
+      <span class="item-identificacao">
+        <input type="checkbox" class="item-agenda-check" value="${item.id}" onchange="atualizarResumoItens('agenda')">
+        <span class="item-icone">●</span>
+        <span class="item-nome">${item.nome}<small>${item.qtd} disponíveis</small></span>
+      </span>
+      <span class="item-quantidade">
+        <small>Qtd.</small>
+        <input type="number" class="item-agenda-qtd" data-item-id="${item.id}" min="1" max="${item.qtd}" value="1" aria-label="Quantidade de ${item.nome}">
+      </span>
     </label>
   `).join('');
+  atualizarResumoItens('agenda');
+}
+
+function atualizarResumoItens(tipo) {
+  const seletor = tipo === 'os' ? '.item-os-check:checked' : '.item-agenda-check:checked';
+  const contador = document.getElementById(`contador-itens-${tipo}`);
+  if (contador) contador.textContent = `${document.querySelectorAll(seletor).length} selecionados`;
+}
+
+function filtrarItens(tipo, termo) {
+  const containerId = tipo === 'os' ? 'itens-edicao-os' : 'itens-disponiveis-agenda';
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const busca = termo.trim().toLocaleLowerCase();
+  container.querySelectorAll('.item-selecao').forEach(item => {
+    item.hidden = busca && !item.dataset.itemNome.includes(busca);
+  });
 }

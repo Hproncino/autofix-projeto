@@ -846,18 +846,89 @@ form > button[type="submit"] {
   background: rgba(15, 24, 35, 0.75);
   border: 1px solid rgba(247, 209, 45, 0.2);
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 16px;
+}
+
+.itens-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.itens-legenda {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .itens-agendamento h4 {
   color: var(--yellow);
+  font-size: 0.98rem;
+  margin-top: 3px;
   margin-bottom: 8px;
 }
 
 .itens-agendamento p {
   color: var(--muted);
   font-size: 0.8rem;
-  margin-bottom: 10px;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+.busca-itens {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.busca-itens input {
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px 10px 34px;
+  border: 1px solid rgba(154, 169, 188, 0.22);
+  border-radius: 9px;
+  background: rgba(5, 11, 20, 0.72);
+  color: var(--text);
+}
+
+.busca-itens input::placeholder {
+  color: var(--muted);
+}
+
+.busca-itens input:focus {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 3px rgba(247, 209, 45, 0.1);
+}
+
+.busca-itens-icone {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  z-index: 1;
+  color: var(--yellow);
+  font-size: 1.15rem;
+  line-height: 1;
+  pointer-events: none;
+  transform: translateY(-52%);
+}
+
+.contador-itens {
+  color: var(--yellow);
+  background: rgba(247, 209, 45, 0.1);
+  border: 1px solid rgba(247, 209, 45, 0.25);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+
+.itens-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
 }
 
 .item-selecao {
@@ -865,18 +936,76 @@ form > button[type="submit"] {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  font-size: 0.8rem;
+  min-height: 52px;
+  padding: 9px 10px;
+  border: 1px solid rgba(154, 169, 188, 0.13);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.025);
   color: var(--muted-strong);
-  padding: 6px 0;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.item-selecao:hover {
+  background: rgba(247, 209, 45, 0.06);
+  border-color: rgba(247, 209, 45, 0.35);
+}
+
+.item-selecao:has(input[type="checkbox"]:checked) {
+  background: rgba(58, 210, 143, 0.07);
+  border-color: rgba(58, 210, 143, 0.42);
 }
 
 .item-selecao input[type="checkbox"] {
   width: auto;
-  margin-right: 8px;
+  margin: 0;
+  accent-color: var(--yellow);
+}
+
+.item-identificacao {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.item-icone {
+  color: var(--yellow);
+  font-size: 0.55rem;
+}
+
+.item-nome {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.item-nome small, .item-quantidade small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.item-quantidade {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .item-selecao input[type="number"] {
-  width: 80px;
+  width: 64px;
+  margin: 0;
+  padding: 7px 6px;
+  text-align: center;
+  background: var(--bg-panel-strong);
+  color: var(--text);
+}
+
+.item-selecao[hidden] {
+  display: none;
 }
 
 .painel-agendamentos,
@@ -1100,6 +1229,14 @@ th {
 
   .campos-duplos {
     grid-template-columns: 1fr;
+  }
+
+  .itens-cabecalho {
+    flex-direction: column;
+  }
+
+  .contador-itens {
+    align-self: flex-start;
   }
 
   .menu a {

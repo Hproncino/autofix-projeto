@@ -238,9 +238,19 @@
             <textarea id="agDefeito" placeholder="Conte o que precisa ser verificado no veículo" rows="3" required></textarea>
           </div>
           <div class="itens-agendamento">
-            <h4>Itens previstos para o serviço</h4>
-            <p>Os itens serão descontados do estoque ao criar a OS.</p>
-            <div id="itens-disponiveis-agenda"></div>
+            <div class="itens-cabecalho">
+              <div>
+                <span class="itens-legenda">Materiais e peças</span>
+                <h4>Itens previstos para o serviço</h4>
+              </div>
+              <span id="contador-itens-agenda" class="contador-itens">0 selecionados</span>
+            </div>
+            <p>Selecione os itens que serão utilizados. Eles serão descontados do estoque ao criar a OS.</p>
+            <div class="busca-itens">
+              <span class="busca-itens-icone">⌕</span>
+              <input type="search" id="busca-itens-agenda" placeholder="Buscar item por nome..." oninput="filtrarItens('agenda', this.value)" autocomplete="off">
+            </div>
+            <div id="itens-disponiveis-agenda" class="itens-lista"></div>
           </div>
           <button type="submit">Confirmar e Gerar OS</button>
         </form>
