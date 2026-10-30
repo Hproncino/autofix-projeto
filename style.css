@@ -674,6 +674,22 @@ form > button[type="submit"] {
   width: min(100%, 480px);
 }
 
+.modal-edicao-estoque-conteudo {
+  width: min(100%, 500px);
+}
+
+.form-edicao-estoque {
+  padding-top: 18px;
+}
+
+.form-edicao-estoque .campo-grupo + .campo-grupo {
+  margin-top: 14px;
+}
+
+.form-edicao-estoque .modal-confirmacao-acoes {
+  margin-top: 22px;
+}
+
 .modal-os-cabecalho {
   display: flex;
   align-items: flex-start;
@@ -1157,6 +1173,27 @@ th {
   background: rgba(255, 93, 93, 0.12);
   border-color: rgba(255, 93, 93, 0.4);
   color: #ff9b9b;
+}
+
+.acoes-estoque {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.acoes-estoque button {
+  margin: 0;
+}
+
+.btn-alterar-estoque {
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(247, 209, 45, 0.12);
+  border-color: rgba(247, 209, 45, 0.4);
+  color: var(--yellow-soft);
+  font-size: 0.78rem;
 }
 
 .historico-painel {

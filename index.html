@@ -331,6 +331,32 @@
       </div>
     </div>
 
+    <div id="modal-edicao-estoque" class="modal-os" role="dialog" aria-modal="true" aria-labelledby="modal-edicao-estoque-titulo" hidden>
+      <div class="modal-os-conteudo modal-edicao-estoque-conteudo">
+        <div class="modal-os-cabecalho">
+          <div>
+            <span class="modal-os-legenda">Controle de estoque</span>
+            <h2 id="modal-edicao-estoque-titulo">Alterar item</h2>
+          </div>
+          <button type="button" class="modal-os-fechar" onclick="fecharEdicaoEstoque()" aria-label="Fechar edição">×</button>
+        </div>
+        <form id="form-edicao-estoque" class="form-edicao-estoque" onsubmit="confirmarEdicaoEstoque(event)">
+          <div class="campo-grupo">
+            <label for="edicao-nome-estoque">Nome do item</label>
+            <input type="text" id="edicao-nome-estoque" required>
+          </div>
+          <div class="campo-grupo">
+            <label for="edicao-qtd-estoque">Quantidade</label>
+            <input type="number" id="edicao-qtd-estoque" min="0" step="1" required>
+          </div>
+          <div class="modal-confirmacao-acoes">
+            <button type="button" class="btn-confirmacao btn-cancelar" onclick="fecharEdicaoEstoque()">Cancelar</button>
+            <button type="submit" class="btn-confirmacao">Continuar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Tela 4: Estoque -->
     <div id="estoque" class="page">
       <header class="page-header">

@@ -98,10 +98,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modal-confirmacao')?.addEventListener('click', event => {
     if (event.target.id === 'modal-confirmacao') fecharConfirmacao();
   });
+  document.getElementById('modal-edicao-estoque')?.addEventListener('click', event => {
+    if (event.target.id === 'modal-edicao-estoque') fecharEdicaoEstoque();
+  });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       fecharDetalhesOS();
       fecharConfirmacao();
+      fecharEdicaoEstoque();
     }
   });
 });
@@ -955,7 +959,10 @@ function renderizarEstoque() {
         <b>${item.nome}</b>
         <p style="margin: 8px 0; font-size: 0.85rem;">Quantidade: <strong>${item.qtd}</strong></p>
         <span class="${badgeClass}">${badgeTexto}</span>
-        <button class="btn-deletar" onclick="deletarEstoque(${item.id})">Deletar</button>
+        <div class="acoes-estoque">
+          <button class="btn-alterar-estoque" onclick="editarEstoque(${item.id})">Alterar</button>
+          <button class="btn-deletar" onclick="deletarEstoque(${item.id})">Excluir</button>
+        </div>
       </div>
     `;
   });
@@ -976,12 +983,73 @@ function adicionarEstoque(e) {
   document.getElementById('qtdItem').value = '';
 }
 
+function editarEstoque(id) {
+  const item = AppData.estoque.find(registro => registro.id === id);
+  if (!item) return;
+
+  document.getElementById('edicao-nome-estoque').value = item.nome;
+  document.getElementById('edicao-qtd-estoque').value = item.qtd;
+  const modal = document.getElementById('modal-edicao-estoque');
+  modal.dataset.itemId = String(id);
+  modal.hidden = false;
+  document.body.classList.add('modal-aberto');
+  document.getElementById('edicao-nome-estoque').focus();
+}
+
+function confirmarEdicaoEstoque(event) {
+  event.preventDefault();
+  const modal = document.getElementById('modal-edicao-estoque');
+  const id = Number(modal.dataset.itemId);
+  const item = AppData.estoque.find(registro => registro.id === id);
+  const nome = document.getElementById('edicao-nome-estoque').value.trim();
+  const qtd = Number(document.getElementById('edicao-qtd-estoque').value);
+  if (!item || !nome || !Number.isInteger(qtd) || qtd < 0) {
+    mostrarAlerta('Informe um nome e uma quantidade inteira igual ou maior que zero.');
+    return;
+  }
+
+  fecharEdicaoEstoque();
+  abrirConfirmacao(
+    `Confirma a alteração do item "${item.nome}" para "${nome}" com quantidade ${qtd}?`,
+    () => {
+      const nomeAnterior = item.nome;
+      const quantidadeAnterior = item.qtd;
+      item.nome = nome;
+      item.qtd = qtd;
+      registrarHistorico(
+        'estoque',
+        'alteração',
+        `Item "${nomeAnterior}" alterado para "${nome}" (${quantidadeAnterior} → ${qtd}).`
+      );
+      salvarBD();
+      renderizarTudo();
+    },
+    { titulo: 'Confirmar alteração', confirmarTexto: 'Alterar item' }
+  );
+}
+
+function fecharEdicaoEstoque() {
+  const modal = document.getElementById('modal-edicao-estoque');
+  if (!modal || modal.hidden) return;
+  modal.hidden = true;
+  delete modal.dataset.itemId;
+  document.body.classList.remove('modal-aberto');
+}
+
 function deletarEstoque(id) {
   const item = AppData.estoque.find(registro => registro.id === id);
-  AppData.estoque = AppData.estoque.filter(registro => registro.id !== id);
-  if (item) registrarHistorico('estoque', 'exclusão', `Item "${item.nome}" removido do estoque.`);
-  salvarBD();
-  renderizarTudo();
+  if (!item) return;
+
+  abrirConfirmacao(
+    `Deseja realmente excluir o item "${item.nome}" do estoque?`,
+    () => {
+      AppData.estoque = AppData.estoque.filter(registro => registro.id !== id);
+      registrarHistorico('estoque', 'exclusão', `Item "${item.nome}" removido do estoque.`);
+      salvarBD();
+      renderizarTudo();
+    },
+    { titulo: 'Confirmar exclusão', confirmarTexto: 'Excluir item', classeConfirmar: 'btn-confirmar-perigo' }
+  );
 }
 
 function renderizarHistorico() {
