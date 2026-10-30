@@ -52,6 +52,7 @@ try {
 let mesCalendario = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let dataCalendarioSelecionada = obterChaveDataCalendario(new Date());
 let filtroOSAtual = 'todos';
+let buscaOSAtual = '';
 
 if (!AppData.estoqueBaseAdicionado) {
   const idsExistentes = new Set(AppData.estoque.map(item => item.id));
@@ -515,6 +516,14 @@ function renderizarOS() {
   
   AppData.ordens.forEach(os => {
     const status = obterStatusOS(os);
+    const agendamento = AppData.agendamentos.find(ag => ag.osId === os.id);
+    const termosBusca = [
+      os.cliente,
+      agendamento?.nome,
+      agendamento?.cpf,
+      agendamento?.veiculo,
+      agendamento?.placa
+    ].filter(Boolean).join(' ');
     const classeStatus = obterClasseStatusOS(status);
     const statusEditaveis = [
       STATUS_OS.STAND_BY,
@@ -527,7 +536,7 @@ function renderizarOS() {
       : '';
     
     corpo.innerHTML += `
-      <tr data-os-id="${os.id}" data-status="${escaparHtml(status)}" class="linha-os" onclick="abrirDetalhesOS(${os.id})">
+      <tr data-os-id="${os.id}" data-status="${escaparHtml(status)}" data-busca="${escaparHtml(termosBusca)}" class="linha-os" onclick="abrirDetalhesOS(${os.id})">
         <td>#${os.id}</td>
         <td>${os.cliente}</td>
         <td>${os.serviço}${os.itensEstoque?.length ? `<br><small>Itens: ${os.itensEstoque.map(item => `${AppData.estoque.find(reg => reg.id === item.estoqueId)?.nome || 'Item removido'} × ${item.quantidade}`).join(', ')}</small>` : ''}</td>
@@ -546,11 +555,7 @@ function renderizarOS() {
     `;
   });
 
-  if (filtroOSAtual !== 'todos') {
-    corpo.querySelectorAll('tr').forEach(linha => {
-      linha.style.display = linha.dataset.status === filtroOSAtual ? '' : 'none';
-    });
-  }
+  aplicarFiltrosOS();
 }
 
 function formatarPrazoOS(valor) {
@@ -910,14 +915,28 @@ function filtrarOS(status, btn) {
   filtroOSAtual = status;
   document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  aplicarFiltrosOS();
+}
 
+function buscarOS(valor) {
+  buscaOSAtual = valor;
+  aplicarFiltrosOS();
+}
+
+function normalizarTexto(valor) {
+  return String(valor || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase();
+}
+
+function aplicarFiltrosOS() {
   const linhas = document.querySelectorAll('#tabela-os tbody tr');
+  const busca = normalizarTexto(buscaOSAtual).trim();
   linhas.forEach(linha => {
-    if (status === 'todos' || linha.getAttribute('data-status') === status) {
-      linha.style.display = '';
-    } else {
-      linha.style.display = 'none';
-    }
+    const correspondeStatus = filtroOSAtual === 'todos' || linha.getAttribute('data-status') === filtroOSAtual;
+    const correspondeBusca = !busca || normalizarTexto(linha.dataset.busca).includes(busca);
+    linha.style.display = correspondeStatus && correspondeBusca ? '' : 'none';
   });
 }
 

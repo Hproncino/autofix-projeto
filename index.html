@@ -281,6 +281,11 @@
         <button class="btn-filtro" onclick="filtrarOS('Cancelado', this)">Cancelados</button>
       </div>
 
+      <div class="busca-os">
+        <label for="busca-os">Pesquisar cliente, CPF ou veículo</label>
+        <input type="search" id="busca-os" placeholder="Digite o nome, CPF, carro ou placa..." oninput="buscarOS(this.value)" autocomplete="off">
+      </div>
+
       <table id="tabela-os">
         <thead>
           <tr>
