@@ -29,6 +29,9 @@
       <a onclick="mudar('estoque', this)">
         Estoque
       </a>
+      <a onclick="mudar('historico', this)">
+        Histórico
+      </a>
       <a onclick="mudar('config', this)">
         Configurações
       </a>
@@ -340,7 +343,46 @@
       <div id="lista-estoque" class="grid-estoque"></div>
     </div>
 
-    <!-- Tela 5: Configurações -->
+    <!-- Tela 5: Histórico -->
+    <div id="historico" class="page">
+      <header class="page-header">
+        <h1>Histórico de alterações</h1>
+        <p>Consulte os registros de alterações em ordens de serviço, agendamentos e estoque.</p>
+      </header>
+
+      <section class="historico-painel" aria-labelledby="historico-titulo">
+        <div class="historico-cabecalho">
+          <div>
+            <span class="form-legenda">Registro permanente</span>
+            <h3 id="historico-titulo">Registro de atividades</h3>
+          </div>
+          <div class="historico-filtros">
+            <label>
+              <span>Filtrar por módulo</span>
+              <select id="filtro-historico-modulo" onchange="renderizarHistorico()">
+                <option value="todos">Todos os módulos</option>
+                <option value="ordens">Ordens de serviço</option>
+                <option value="agendamentos">Agendamentos</option>
+                <option value="estoque">Estoque</option>
+              </select>
+            </label>
+            <label>
+              <span>Filtrar por ação</span>
+              <select id="filtro-historico-acao" onchange="renderizarHistorico()">
+                <option value="todos">Todas as ações</option>
+                <option value="criação">Criação</option>
+                <option value="alteração">Alteração</option>
+                <option value="exclusão">Exclusão</option>
+                <option value="cancelamento">Cancelamento</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div id="lista-historico" class="lista-historico" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <!-- Tela 6: Configurações -->
     <div id="config" class="page">
       <header class="page-header">
         <h1>Configurações</h1>

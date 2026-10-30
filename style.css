@@ -1139,6 +1139,128 @@ th {
   color: #ff9b9b;
 }
 
+.historico-painel {
+  background: rgba(10, 18, 26, 0.8);
+  border: 1px solid var(--stroke-soft);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 20px 18px 18px;
+}
+
+.historico-cabecalho {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(247, 209, 45, 0.18);
+}
+
+.historico-cabecalho h3 {
+  margin-top: 6px;
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.historico-filtros {
+  display: flex;
+  gap: 14px;
+}
+
+.historico-filtros label {
+  display: grid;
+  gap: 6px;
+  min-width: 190px;
+}
+
+.historico-filtros label span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.historico-filtros select {
+  margin: 0;
+  min-width: 0;
+}
+
+.lista-historico {
+  display: grid;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.historico-registro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 11px 12px;
+  background: rgba(15, 24, 35, 0.66);
+  border: 1px solid rgba(154, 169, 188, 0.16);
+  border-radius: 10px;
+}
+
+.historico-icone {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(247, 209, 45, 0.12);
+  color: var(--yellow);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.historico-detalhes {
+  min-width: 0;
+  flex: 1;
+}
+
+.historico-registro-topo,
+.historico-registro-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.historico-registro-topo strong {
+  color: var(--muted-strong);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.historico-registro-rodape {
+  justify-content: flex-start;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.historico-modulo,
+.historico-acao {
+  color: var(--yellow);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.historico-modulo {
+  white-space: nowrap;
+}
+
+.historico-acao {
+  text-transform: capitalize;
+}
+
+.historico-vazio {
+  padding: 28px 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
 .placeholder-panel {
   display: grid;
   grid-template-columns: repeat(2, minmax(200px, 1fr));
@@ -1197,6 +1319,19 @@ th {
     grid-template-columns: 1fr;
   }
 
+  .historico-cabecalho {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .historico-filtros {
+    flex-direction: column;
+  }
+
+  .historico-filtros label {
+    min-width: 0;
+  }
+
   .content {
     padding: 22px 18px 26px;
   }
@@ -1241,6 +1376,12 @@ th {
 
   .menu a {
     font-size: 0.92rem;
+  }
+
+  .historico-registro-topo {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
   }
 
   .page-header h1 {

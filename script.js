@@ -62,6 +62,17 @@ if (!AppData.estoqueBaseAdicionado) {
   salvarBD();
 }
 
+function registrarHistorico(modulo, acao, descricao) {
+  if (!Array.isArray(AppData.historico)) AppData.historico = [];
+  AppData.historico.unshift({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    modulo,
+    acao,
+    descricao,
+    ocorridoEm: new Date().toISOString()
+  });
+}
+
 // Salvamento Seguro no LocalStorage
 function salvarBD() {
   try {
@@ -101,6 +112,7 @@ function renderizarTudo() {
   renderizarOS();
   renderizarEstoque();
   renderizarItensAgendamento();
+  renderizarHistorico();
 }
 
 function atualizarPrazosOS() {
@@ -444,6 +456,9 @@ function salvarAgendamento(e) {
     estoqueBaixado: true
   });
 
+  registrarHistorico('agendamentos', 'criação', `Agendamento criado para ${nome} em ${dataFormatada}.`);
+  registrarHistorico('ordens', 'criação', `OS #${idOS} criada para ${nome}.`);
+  if (itens.length) registrarHistorico('estoque', 'alteração', `Estoque atualizado pelos itens vinculados à OS #${idOS}.`);
   salvarBD();
   renderizarTudo();
 
@@ -608,6 +623,7 @@ function salvarPrazoOS(event, id) {
   if (!os || !campoPrazo || Number.isNaN(new Date(campoPrazo.value).getTime())) return;
 
   os.prazoConclusao = campoPrazo.value;
+  registrarHistorico('ordens', 'alteração', `Prazo da OS #${id} atualizado.`);
   salvarBD();
   renderizarTudo();
   abrirDetalhesOS(id);
@@ -687,6 +703,8 @@ function salvarItensOS(id) {
 
   os.itensEstoque = itens;
   descontarItensDoEstoque(os);
+  registrarHistorico('ordens', 'alteração', `Itens previstos da OS #${id} atualizados.`);
+  registrarHistorico('estoque', 'alteração', `Estoque atualizado pelos itens da OS #${id}.`);
   salvarBD();
   renderizarTudo();
   abrirDetalhesOS(id);
@@ -751,6 +769,10 @@ function concluirAlteracaoStatusOS(os, novoStatus) {
     descontarItensDoEstoque(os);
   }
   os.status = novoStatus;
+  registrarHistorico('ordens', 'alteração', `Status da OS #${os.id} alterado para "${novoStatus}".`);
+  if (novoStatus === STATUS_OS.CONCLUIDO && os.itensEstoque?.length) {
+    registrarHistorico('estoque', 'alteração', `Estoque atualizado na conclusão da OS #${os.id}.`);
+  }
   salvarBD();
   renderizarTudo();
 }
@@ -801,6 +823,10 @@ function excluirOSConfirmada(os, devolverItens) {
     os.cliente !== `${ag.nome} (${ag.veiculo})` &&
     os.cliente !== `${ag.nome} (${ag.veiculo} - ${ag.placa})`
   );
+  registrarHistorico('ordens', 'exclusão', `OS #${os.id} excluída.`);
+  if (devolverItens && os.itensEstoque?.length) {
+    registrarHistorico('estoque', 'alteração', `Itens da OS #${os.id} devolvidos ao estoque.`);
+  }
   salvarBD();
   renderizarTudo();
 }
@@ -922,6 +948,7 @@ function adicionarEstoque(e) {
   const qtd = parseInt(document.getElementById('qtdItem').value);
 
   AppData.estoque.push({ id: Date.now(), nome, qtd });
+  registrarHistorico('estoque', 'criação', `Item "${nome}" adicionado com quantidade inicial ${qtd}.`);
   
   salvarBD();
   renderizarTudo();
@@ -931,9 +958,55 @@ function adicionarEstoque(e) {
 }
 
 function deletarEstoque(id) {
-  AppData.estoque = AppData.estoque.filter(item => item.id !== id);
+  const item = AppData.estoque.find(registro => registro.id === id);
+  AppData.estoque = AppData.estoque.filter(registro => registro.id !== id);
+  if (item) registrarHistorico('estoque', 'exclusão', `Item "${item.nome}" removido do estoque.`);
   salvarBD();
   renderizarTudo();
+}
+
+function renderizarHistorico() {
+  const lista = document.getElementById('lista-historico');
+  if (!lista) return;
+
+  const moduloSelecionado = document.getElementById('filtro-historico-modulo')?.value || 'todos';
+  const acaoSelecionada = document.getElementById('filtro-historico-acao')?.value || 'todos';
+  const historico = (AppData.historico || []).filter(registro =>
+    (moduloSelecionado === 'todos' || registro.modulo === moduloSelecionado) &&
+    (acaoSelecionada === 'todos' || registro.acao === acaoSelecionada)
+  );
+
+  if (!historico.length) {
+    lista.innerHTML = '<div class="historico-vazio">Nenhuma alteração registrada para os filtros selecionados.</div>';
+    return;
+  }
+
+  const nomesModulos = {
+    ordens: 'Ordem de serviço',
+    agendamentos: 'Agendamento',
+    estoque: 'Estoque'
+  };
+  lista.innerHTML = historico.map(registro => {
+    const data = new Date(registro.ocorridoEm);
+    const dataFormatada = Number.isNaN(data.getTime())
+      ? 'Data indisponível'
+      : data.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    return `
+      <article class="historico-registro">
+        <div class="historico-icone" aria-hidden="true">↗</div>
+        <div class="historico-detalhes">
+          <div class="historico-registro-topo">
+            <strong>${escaparHtml(registro.descricao)}</strong>
+            <span class="historico-modulo">${escaparHtml(nomesModulos[registro.modulo] || registro.modulo)}</span>
+          </div>
+          <div class="historico-registro-rodape">
+            <span class="historico-acao">${escaparHtml(registro.acao)}</span>
+            <time datetime="${escaparHtml(registro.ocorridoEm)}">${dataFormatada}</time>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join('');
 }
 
 // Navegação entre abas
@@ -958,6 +1031,8 @@ function retirarAgendamento(indice) {
     const ordem = agendamento.osId && AppData.ordens.find(os => os.id === agendamento.osId);
     if (ordem && obterStatusBaseOS(ordem) === STATUS_OS.STAND_BY) ordem.status = STATUS_OS.CANCELADO;
     AppData.agendamentos.splice(indice, 1);
+    registrarHistorico('agendamentos', 'cancelamento', `Agendamento de ${agendamento.nome} cancelado.`);
+    if (ordem) registrarHistorico('ordens', 'alteração', `OS #${ordem.id} marcada como cancelada.`);
     salvarBD();
     renderizarTudo();
   }, { titulo: 'Cancelar agendamento', confirmarTexto: 'Cancelar agendamento' });
