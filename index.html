@@ -392,7 +392,7 @@
           <div class="historico-filtros">
             <label>
               <span>Filtrar por módulo</span>
-              <select id="filtro-historico-modulo" onchange="renderizarHistorico()">
+              <select id="filtro-historico-modulo" onchange="alterarFiltrosHistorico()">
                 <option value="todos">Todos os módulos</option>
                 <option value="ordens">Ordens de serviço</option>
                 <option value="agendamentos">Agendamentos</option>
@@ -401,7 +401,7 @@
             </label>
             <label>
               <span>Filtrar por ação</span>
-              <select id="filtro-historico-acao" onchange="renderizarHistorico()">
+              <select id="filtro-historico-acao" onchange="alterarFiltrosHistorico()">
                 <option value="todos">Todas as ações</option>
                 <option value="criação">Criação</option>
                 <option value="alteração">Alteração</option>
@@ -412,6 +412,7 @@
           </div>
         </div>
         <div id="lista-historico" class="lista-historico" aria-live="polite"></div>
+        <nav id="paginacao-historico" class="paginacao-historico" aria-label="Paginação do histórico" hidden></nav>
       </section>
     </div>
 

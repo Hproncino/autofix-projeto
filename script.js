@@ -53,6 +53,8 @@ let mesCalendario = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
 let dataCalendarioSelecionada = obterChaveDataCalendario(new Date());
 let filtroOSAtual = 'todos';
 let buscaOSAtual = '';
+let paginaHistoricoAtual = 1;
+const ITENS_POR_PAGINA_HISTORICO = 10;
 
 if (!AppData.estoqueBaseAdicionado) {
   const idsExistentes = new Set(AppData.estoque.map(item => item.id));
@@ -65,6 +67,7 @@ if (!AppData.estoqueBaseAdicionado) {
 
 function registrarHistorico(modulo, acao, descricao, detalhe = '') {
   if (!Array.isArray(AppData.historico)) AppData.historico = [];
+  paginaHistoricoAtual = 1;
   AppData.historico.unshift({
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     modulo,
@@ -1151,6 +1154,37 @@ function deletarEstoque(id) {
   );
 }
 
+function alterarFiltrosHistorico() {
+  paginaHistoricoAtual = 1;
+  renderizarHistorico();
+}
+
+function renderizarPaginacaoHistorico(totalPaginas) {
+  const paginacao = document.getElementById('paginacao-historico');
+  if (!paginacao) return;
+
+  paginacao.hidden = totalPaginas <= 1;
+  if (paginacao.hidden) {
+    paginacao.innerHTML = '';
+    return;
+  }
+
+  const botoes = Array.from({ length: totalPaginas }, (_, indice) => {
+    const pagina = indice + 1;
+    return `<button type="button" class="historico-pagina ${pagina === paginaHistoricoAtual ? 'active' : ''}" onclick="irParaPaginaHistorico(${pagina})" ${pagina === paginaHistoricoAtual ? 'aria-current="page"' : ''}>Página ${pagina}</button>`;
+  });
+  paginacao.innerHTML = `
+    <button type="button" class="historico-pagina" onclick="irParaPaginaHistorico(${paginaHistoricoAtual - 1})" ${paginaHistoricoAtual === 1 ? 'disabled' : ''} aria-label="Página anterior">Anterior</button>
+    ${botoes.join('')}
+    <button type="button" class="historico-pagina" onclick="irParaPaginaHistorico(${paginaHistoricoAtual + 1})" ${paginaHistoricoAtual === totalPaginas ? 'disabled' : ''} aria-label="Próxima página">Próxima</button>
+  `;
+}
+
+function irParaPaginaHistorico(pagina) {
+  paginaHistoricoAtual = pagina;
+  renderizarHistorico();
+}
+
 function renderizarHistorico() {
   const lista = document.getElementById('lista-historico');
   if (!lista) return;
@@ -1164,15 +1198,21 @@ function renderizarHistorico() {
 
   if (!historico.length) {
     lista.innerHTML = '<div class="historico-vazio">Nenhuma alteração registrada para os filtros selecionados.</div>';
+    renderizarPaginacaoHistorico(0);
     return;
   }
+
+  const totalPaginas = Math.ceil(historico.length / ITENS_POR_PAGINA_HISTORICO);
+  paginaHistoricoAtual = Math.min(Math.max(paginaHistoricoAtual, 1), totalPaginas);
+  const inicio = (paginaHistoricoAtual - 1) * ITENS_POR_PAGINA_HISTORICO;
+  const historicoPagina = historico.slice(inicio, inicio + ITENS_POR_PAGINA_HISTORICO);
 
   const nomesModulos = {
     ordens: 'Ordem de serviço',
     agendamentos: 'Agendamento',
     estoque: 'Estoque'
   };
-  lista.innerHTML = historico.map(registro => {
+  lista.innerHTML = historicoPagina.map(registro => {
     const data = new Date(registro.ocorridoEm);
     const dataFormatada = Number.isNaN(data.getTime())
       ? 'Data indisponível'
@@ -1194,6 +1234,7 @@ function renderizarHistorico() {
       </article>
     `;
   }).join('');
+  renderizarPaginacaoHistorico(totalPaginas);
 }
 
 // Navegação entre abas
