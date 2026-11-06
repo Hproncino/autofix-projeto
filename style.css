@@ -1126,6 +1126,17 @@ form > button[type="submit"] {
   color: #0a1017;
 }
 
+.tabela-os-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+}
+
+#tabela-os {
+  width: 100%;
+  min-width: 760px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

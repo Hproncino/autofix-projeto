@@ -420,12 +420,12 @@ function renderizarAgendamentos() {
     container.innerHTML += `
       <div class="card-agenda">
         <div class="agenda-topo">
-          <b>${ag.nome}</b>
+          <b>${escaparHtml(ag.nome)}</b>
           <span class="badge ${status === STATUS_OS.ATRASADO ? 'erro' : 'exec'}">${escaparHtml(status)}</span>
         </div>
-        <p>${ag.veiculo || 'Veículo não informado'}${ag.placa ? ` - ${ag.placa}` : ''} - ${ag.tipo}</p>
-        ${ag.cpf ? `<small>CPF: ${ag.cpf}</small>` : ''}
-        <small>${ag.data}</small>
+        <p>${escaparHtml(ag.veiculo || 'Veículo não informado')}${ag.placa ? ` - ${escaparHtml(ag.placa)}` : ''} - ${escaparHtml(ag.tipo)}</p>
+        ${ag.cpf ? `<small>CPF: ${escaparHtml(ag.cpf)}</small>` : ''}
+        <small>${escaparHtml(ag.data)}</small>
         <button class="btn-deletar" onclick="retirarAgendamento(${indice})">Cancelar agendamento</button>
       </div>
     `;
@@ -435,18 +435,22 @@ function renderizarAgendamentos() {
 function salvarAgendamento(e) {
   e.preventDefault();
   const cpf = document.getElementById('agCpf').value.trim();
-  const nome = document.getElementById('agNome').value;
-  const veiculo = document.getElementById('agVeiculo').value;
+  const nome = document.getElementById('agNome').value.trim();
+  const veiculo = document.getElementById('agVeiculo').value.trim();
   const placa = document.getElementById('agPlaca').value.trim().toUpperCase();
   const dataHora = document.getElementById('agData').value;
   const prazoConclusao = document.getElementById('agPrazo').value;
   const tipoSelecionado = document.getElementById('agTipo').value;
   const tipoCustomizado = document.getElementById('agTipoCustomizado').value.trim();
   const tipo = tipoSelecionado === 'customizado' ? tipoCustomizado : tipoSelecionado;
-  const defeito = document.getElementById('agDefeito').value;
+  const defeito = document.getElementById('agDefeito').value.trim();
 
-  if (cpf.replace(/\D/g, '').length !== 11) {
+  if (!cpfValido(cpf)) {
     mostrarAlerta('Informe um CPF válido com 11 números.');
+    return;
+  }
+  if (!nome || !veiculo || !defeito) {
+    mostrarAlerta('Preencha o nome, o veículo e os detalhes do serviço.');
     return;
   }
   if (tipoSelecionado === 'customizado' && !tipoCustomizado) {
@@ -545,6 +549,22 @@ function formatarCpf(event) {
     .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
 }
 
+function cpfValido(valor) {
+  const cpf = String(valor || '').replace(/\D/g, '');
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+
+  const calcularDigito = quantidade => {
+    let soma = 0;
+    for (let indice = 0; indice < quantidade; indice += 1) {
+      soma += Number(cpf[indice]) * (quantidade + 1 - indice);
+    }
+    const resto = (soma * 10) % 11;
+    return resto === 10 ? 0 : resto;
+  };
+
+  return calcularDigito(9) === Number(cpf[9]) && calcularDigito(10) === Number(cpf[10]);
+}
+
 function formatarPlaca(event) {
   event.target.value = event.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 7).toUpperCase();
 }
@@ -579,9 +599,9 @@ function renderizarOS() {
     corpo.innerHTML += `
       <tr data-os-id="${os.id}" data-status="${escaparHtml(status)}" data-busca="${escaparHtml(termosBusca)}" class="linha-os" onclick="abrirDetalhesOS(${os.id})">
         <td>#${os.id}</td>
-        <td>${os.cliente}</td>
-        <td>${os.serviço}${os.itensEstoque?.length ? `<br><small>Itens: ${os.itensEstoque.map(item => `${AppData.estoque.find(reg => reg.id === item.estoqueId)?.nome || 'Item removido'} × ${item.quantidade}`).join(', ')}</small>` : ''}</td>
-        <td>${os.emissor}</td>
+        <td>${escaparHtml(os.cliente)}</td>
+        <td>${escaparHtml(os.serviço)}${os.itensEstoque?.length ? `<br><small>Itens: ${escaparHtml(os.itensEstoque.map(item => `${AppData.estoque.find(reg => reg.id === item.estoqueId)?.nome || 'Item removido'} × ${item.quantidade}`).join(', '))}</small>` : ''}</td>
+        <td>${escaparHtml(os.emissor)}</td>
         <td>${escaparHtml(formatarPrazoOS(os.prazoConclusao))}</td>
         <td>
           <select class="select-status status-${classeStatus}" onclick="event.stopPropagation()" onchange="alterarStatusOS(${os.id}, this)">
@@ -816,6 +836,13 @@ function alterarStatusOS(id, selectElement) {
 }
 
 function concluirAlteracaoStatusOS(os, novoStatus) {
+  const cancelarEmEspera = novoStatus === STATUS_OS.CANCELADO &&
+    obterStatusBaseOS(os) === STATUS_OS.STAND_BY;
+  if (cancelarEmEspera && !devolverItensAoCancelarOS(os)) {
+    renderizarOS();
+    return;
+  }
+
   if (novoStatus === STATUS_OS.CONCLUIDO && !os.estoqueBaixado) {
     for (const item of os.itensEstoque || []) {
       const estoque = AppData.estoque.find(registro => registro.id === item.estoqueId);
@@ -853,6 +880,18 @@ function devolverItensAoEstoque(os) {
     registros[indice].qtd += item.quantidade;
   });
   os.estoqueBaixado = false;
+  return true;
+}
+
+function devolverItensAoCancelarOS(os) {
+  if (!os.estoqueBaixado || !os.itensEstoque?.length) return true;
+  if (!devolverItensAoEstoque(os)) return false;
+  registrarHistorico(
+    'estoque',
+    'alteração',
+    `Itens da OS #${os.id} devolvidos ao estoque após cancelamento.`,
+    `Itens devolvidos: ${formatarItensEstoque(os.itensEstoque)}.`
+  );
   return true;
 }
 
@@ -1016,7 +1055,7 @@ function renderizarEstoque() {
 
     grid.innerHTML += `
       <div class="card-item">
-        <b>${item.nome}</b>
+        <b>${escaparHtml(item.nome)}</b>
         <p style="margin: 8px 0; font-size: 0.85rem;">Quantidade: <strong>${item.qtd}</strong></p>
         <span class="${badgeClass}">${badgeTexto}</span>
         <div class="acoes-estoque">
@@ -1177,7 +1216,10 @@ function retirarAgendamento(indice) {
   if (!agendamento) return;
   abrirConfirmacao(`Cancelar o agendamento de ${agendamento.nome}?`, () => {
     const ordem = agendamento.osId && AppData.ordens.find(os => os.id === agendamento.osId);
-    if (ordem && obterStatusBaseOS(ordem) === STATUS_OS.STAND_BY) ordem.status = STATUS_OS.CANCELADO;
+    if (ordem && obterStatusBaseOS(ordem) === STATUS_OS.STAND_BY) {
+      if (!devolverItensAoCancelarOS(ordem)) return;
+      ordem.status = STATUS_OS.CANCELADO;
+    }
     AppData.agendamentos.splice(indice, 1);
     registrarHistorico('agendamentos', 'cancelamento', `Agendamento de ${agendamento.nome} cancelado.`);
     if (ordem) registrarHistorico('ordens', 'alteração', `OS #${ordem.id} marcada como cancelada.`);
@@ -1198,11 +1240,11 @@ function renderizarItensAgendamento() {
       <span class="item-identificacao">
         <input type="checkbox" class="item-agenda-check" value="${item.id}" onchange="atualizarResumoItens('agenda')">
         <span class="item-icone">●</span>
-        <span class="item-nome">${item.nome}<small>${item.qtd} disponíveis</small></span>
+        <span class="item-nome">${escaparHtml(item.nome)}<small>${item.qtd} disponíveis</small></span>
       </span>
       <span class="item-quantidade">
         <small>Qtd.</small>
-        <input type="number" class="item-agenda-qtd" data-item-id="${item.id}" min="1" max="${item.qtd}" value="1" aria-label="Quantidade de ${item.nome}">
+        <input type="number" class="item-agenda-qtd" data-item-id="${item.id}" min="1" max="${item.qtd}" value="1" aria-label="Quantidade de ${escaparHtml(item.nome)}">
       </span>
     </label>
   `).join('');

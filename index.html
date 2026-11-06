@@ -286,20 +286,22 @@
         <input type="search" id="busca-os" placeholder="Digite o nome, CPF, carro ou placa..." oninput="buscarOS(this.value)" autocomplete="off">
       </div>
 
-      <table id="tabela-os">
-        <thead>
-          <tr>
-            <th>Nº OS</th>
-            <th>Cliente / Veículo</th>
-            <th>Serviço Solicitado</th>
-            <th>Emitido por</th>
-            <th>Prazo previsto</th>
-            <th>Status (Alterar)</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="corpo-tabela-os"></tbody>
-      </table>
+      <div class="tabela-os-scroll" role="region" aria-label="Ordens de serviço" tabindex="0">
+        <table id="tabela-os">
+          <thead>
+            <tr>
+              <th>Nº OS</th>
+              <th>Cliente / Veículo</th>
+              <th>Serviço Solicitado</th>
+              <th>Emitido por</th>
+              <th>Prazo previsto</th>
+              <th>Status (Alterar)</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="corpo-tabela-os"></tbody>
+        </table>
+      </div>
     </div>
 
     <div id="modal-detalhes-os" class="modal-os" role="dialog" aria-modal="true" aria-labelledby="modal-os-titulo" hidden>
