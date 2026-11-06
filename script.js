@@ -63,15 +63,45 @@ if (!AppData.estoqueBaseAdicionado) {
   salvarBD();
 }
 
-function registrarHistorico(modulo, acao, descricao) {
+function registrarHistorico(modulo, acao, descricao, detalhe = '') {
   if (!Array.isArray(AppData.historico)) AppData.historico = [];
   AppData.historico.unshift({
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     modulo,
     acao,
     descricao,
+    detalhe,
     ocorridoEm: new Date().toISOString()
   });
+}
+
+function formatarItensEstoque(itens) {
+  return itens.map(item => {
+    const nome = AppData.estoque.find(registro => registro.id === item.estoqueId)?.nome || 'Item removido';
+    return `${nome} × ${item.quantidade}`;
+  }).join(', ');
+}
+
+function descreverAlteracoesItensOS(itensAnteriores, itensNovos) {
+  const ids = new Set([
+    ...itensAnteriores.map(item => item.estoqueId),
+    ...itensNovos.map(item => item.estoqueId)
+  ]);
+  const alteracoes = [];
+
+  ids.forEach(id => {
+    const anterior = itensAnteriores.find(item => item.estoqueId === id);
+    const novo = itensNovos.find(item => item.estoqueId === id);
+    const nome = AppData.estoque.find(item => item.id === id)?.nome || 'Item removido';
+
+    if (!anterior) alteracoes.push(`${nome}: incluído (×${novo.quantidade})`);
+    else if (!novo) alteracoes.push(`${nome}: removido (×${anterior.quantidade})`);
+    else if (anterior.quantidade !== novo.quantidade) {
+      alteracoes.push(`${nome}: ${anterior.quantidade} → ${novo.quantidade}`);
+    }
+  });
+
+  return alteracoes.join('; ');
 }
 
 // Salvamento Seguro no LocalStorage
@@ -463,7 +493,14 @@ function salvarAgendamento(e) {
 
   registrarHistorico('agendamentos', 'criação', `Agendamento criado para ${nome} em ${dataFormatada}.`);
   registrarHistorico('ordens', 'criação', `OS #${idOS} criada para ${nome}.`);
-  if (itens.length) registrarHistorico('estoque', 'alteração', `Estoque atualizado pelos itens vinculados à OS #${idOS}.`);
+  if (itens.length) {
+    registrarHistorico(
+      'estoque',
+      'alteração',
+      `Estoque atualizado pelos itens vinculados à OS #${idOS}.`,
+      `Itens vinculados: ${formatarItensEstoque(itens)}.`
+    );
+  }
   salvarBD();
   renderizarTudo();
 
@@ -698,6 +735,7 @@ function salvarItensOS(id) {
     quantidade: Number(document.querySelector(`.item-os-qtd[data-item-id="${check.value}"]`).value)
   }));
   const itensAnteriores = os.itensEstoque || [];
+  const descricaoAlteracoes = descreverAlteracoesItensOS(itensAnteriores, itens);
   if (os.estoqueBaixado && !devolverItensAoEstoque(os)) return;
 
   for (const item of itens) {
@@ -712,8 +750,20 @@ function salvarItensOS(id) {
 
   os.itensEstoque = itens;
   descontarItensDoEstoque(os);
-  registrarHistorico('ordens', 'alteração', `Itens previstos da OS #${id} atualizados.`);
-  registrarHistorico('estoque', 'alteração', `Estoque atualizado pelos itens da OS #${id}.`);
+  if (descricaoAlteracoes) {
+    registrarHistorico(
+      'ordens',
+      'alteração',
+      `Itens previstos da OS #${id} atualizados.`,
+      `Itens alterados: ${descricaoAlteracoes}.`
+    );
+    registrarHistorico(
+      'estoque',
+      'alteração',
+      `Estoque atualizado pelos itens da OS #${id}.`,
+      `Itens alterados: ${descricaoAlteracoes}.`
+    );
+  }
   salvarBD();
   renderizarTudo();
   abrirDetalhesOS(id);
@@ -780,7 +830,12 @@ function concluirAlteracaoStatusOS(os, novoStatus) {
   os.status = novoStatus;
   registrarHistorico('ordens', 'alteração', `Status da OS #${os.id} alterado para "${novoStatus}".`);
   if (novoStatus === STATUS_OS.CONCLUIDO && os.itensEstoque?.length) {
-    registrarHistorico('estoque', 'alteração', `Estoque atualizado na conclusão da OS #${os.id}.`);
+    registrarHistorico(
+      'estoque',
+      'alteração',
+      `Estoque atualizado na conclusão da OS #${os.id}.`,
+      `Itens vinculados: ${formatarItensEstoque(os.itensEstoque)}.`
+    );
   }
   salvarBD();
   renderizarTudo();
@@ -834,7 +889,12 @@ function excluirOSConfirmada(os, devolverItens) {
   );
   registrarHistorico('ordens', 'exclusão', `OS #${os.id} excluída.`);
   if (devolverItens && os.itensEstoque?.length) {
-    registrarHistorico('estoque', 'alteração', `Itens da OS #${os.id} devolvidos ao estoque.`);
+    registrarHistorico(
+      'estoque',
+      'alteração',
+      `Itens da OS #${os.id} devolvidos ao estoque.`,
+      `Itens devolvidos: ${formatarItensEstoque(os.itensEstoque)}.`
+    );
   }
   salvarBD();
   renderizarTudo();
@@ -1086,6 +1146,7 @@ function renderizarHistorico() {
             <strong>${escaparHtml(registro.descricao)}</strong>
             <span class="historico-modulo">${escaparHtml(nomesModulos[registro.modulo] || registro.modulo)}</span>
           </div>
+          ${registro.detalhe ? `<small class="historico-descricao-complementar">${escaparHtml(registro.detalhe)}</small>` : ''}
           <div class="historico-registro-rodape">
             <span class="historico-acao">${escaparHtml(registro.acao)}</span>
             <time datetime="${escaparHtml(registro.ocorridoEm)}">${dataFormatada}</time>
