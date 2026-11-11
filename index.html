@@ -481,6 +481,45 @@
       <div id="lista-estoque" class="grid-estoque"></div>
     </div>
 
+    <!-- CONFIGURAÇÕES -->
+    <div id="config" class="page">
+      <header class="page-header">
+        <h1>Configurações</h1>
+        <p>Atualize os dados da oficina exibidos no sistema e nas ordens de serviço.</p>
+      </header>
+
+      <form class="widget-card" onsubmit="salvarConfiguracoes(event)">
+        <div class="form-titulo">
+          <span class="form-legenda">Dados da oficina</span>
+          <h3>Identificação e contato</h3>
+        </div>
+
+        <div class="campo-grupo">
+          <label for="cfgNome">Nome da oficina</label>
+          <input type="text" id="cfgNome" autocomplete="organization" required>
+        </div>
+
+        <div class="campo-grupo">
+          <label for="cfgCnpj">CNPJ</label>
+          <input type="text" id="cfgCnpj" inputmode="numeric" autocomplete="off">
+        </div>
+
+        <div class="campo-grupo">
+          <label for="cfgTelefone">Telefone</label>
+          <input type="tel" id="cfgTelefone" autocomplete="tel">
+        </div>
+
+        <div class="campo-grupo">
+          <label for="cfgEndereco">Endereço</label>
+          <input type="text" id="cfgEndereco" autocomplete="street-address">
+        </div>
+
+        <div class="campo-grupo">
+          <button type="submit">Salvar configurações</button>
+        </div>
+      </form>
+    </div>
+
     <!-- HISTÓRICO -->
     <div id="historico" class="page">
       <header class="page-header">
