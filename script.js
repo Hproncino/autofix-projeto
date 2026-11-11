@@ -317,6 +317,10 @@ function renderizarTudo() {
 
   renderizarItensAgendamento();
 
+  renderizarItensOrcamento();
+
+  renderizarOrcamentos();
+
   renderizarHistorico();
 
 }
@@ -997,7 +1001,14 @@ function salvarAgendamento(e) {
 
     prazoConclusao,
 
-    itensEstoque: itens,
+    itensEstoque: itens.map(item => {
+      const produto = AppData.estoque.find(registro => registro.id === item.estoqueId);
+      return {
+        ...item,
+        nome: produto.nome,
+        precoUnitario: obterPrecoEstoque(produto)
+      };
+    }),
 
     estoqueBaixado: true
 
@@ -1503,7 +1514,15 @@ function salvarItensOS(id) {
 
 
 
-  os.itensEstoque = itens;
+  os.itensEstoque = itens.map(item => {
+    const produto = AppData.estoque.find(registro => registro.id === item.estoqueId);
+    const itemAnterior = itensAnteriores.find(registro => registro.estoqueId === item.estoqueId);
+    return {
+      ...item,
+      nome: itemAnterior?.nome || produto.nome,
+      precoUnitario: itemAnterior?.precoUnitario ?? obterPrecoEstoque(produto)
+    };
+  });
 
   descontarItensDoEstoque(os);
 
@@ -2454,130 +2473,146 @@ AppData.contadorOrcamento ||= 1;
 // =============================================
 
 // ORÇAMENTO DE PEÇAS
-
 // =============================================
 
 
+function obterDadosClienteOS(os) {
+  const agendamento = AppData.agendamentos.find(ag => ag.osId === os.id);
+  if (agendamento) {
+    return {
+      cliente: agendamento.nome || '',
+      veiculo: agendamento.veiculo || '',
+      placa: agendamento.placa || ''
+    };
+  }
+
+  const correspondencia = String(os.cliente || '').match(/^(.*?)\s*\((.*)\)$/);
+  if (!correspondencia) {
+    return { cliente: String(os.cliente || ''), veiculo: '', placa: '' };
+  }
+
+  const cliente = correspondencia[1].trim();
+  const detalhes = correspondencia[2].trim();
+  const separador = detalhes.lastIndexOf(' - ');
+  return separador < 0
+    ? { cliente, veiculo: detalhes, placa: '' }
+    : {
+      cliente,
+      veiculo: detalhes.slice(0, separador).trim(),
+      placa: detalhes.slice(separador + 3).trim()
+    };
+}
+
+function obterItensOrcamentoOS(os) {
+  return (os?.itensEstoque || []).map(itemOS => {
+    const produto = AppData.estoque.find(item => item.id === itemOS.estoqueId);
+    const precoSalvo = Number(itemOS.precoUnitario);
+    const precoUnitario = Number.isFinite(precoSalvo) && precoSalvo > 0
+      ? precoSalvo
+      : produto ? obterPrecoEstoque(produto) : null;
+    const quantidade = Number(itemOS.quantidade);
+
+    return {
+      estoqueId: itemOS.estoqueId,
+      nome: itemOS.nome || produto?.nome || 'Item removido do estoque',
+      quantidade,
+      precoUnitario,
+      subtotal: precoUnitario === null ? null : arredondarMoeda(precoUnitario * quantidade)
+    };
+  });
+}
+
+function arredondarMoeda(valor) {
+  return Math.round((valor + Number.EPSILON) * 100) / 100;
+}
+
+function atualizarTotalOrcamento() {
+  const osId = document.getElementById('orcOS')?.value;
+  const os = AppData.ordens.find(ordem => String(ordem.id) === osId);
+  const subtotalItens = arredondarMoeda(obterItensOrcamentoOS(os).reduce(
+    (soma, item) => soma + (Number.isFinite(item.subtotal) ? item.subtotal : 0),
+    0
+  ));
+  const maoDeObra = Number(document.getElementById('orcMaoObra')?.value) || 0;
+
+  document.getElementById('orcSubtotalItens').textContent = formatarPrecoEstoque(subtotalItens);
+  document.getElementById('orcResumoMaoObra').textContent = formatarPrecoEstoque(maoDeObra);
+  document.getElementById('orcTotal').textContent = formatarPrecoEstoque(arredondarMoeda(subtotalItens + maoDeObra));
+}
+
+function selecionarOrdemOrcamento(osId) {
+  const os = AppData.ordens.find(ordem => String(ordem.id) === String(osId));
+  const dadosCliente = os
+    ? obterDadosClienteOS(os)
+    : { cliente: '', veiculo: '', placa: '' };
+
+  document.getElementById('orcCliente').value = dadosCliente.cliente;
+  document.getElementById('orcVeiculo').value = dadosCliente.veiculo;
+  document.getElementById('orcPlaca').value = dadosCliente.placa;
+  renderizarItensOrcamento();
+  atualizarTotalOrcamento();
+}
 
 function criarOrcamento(event) {
 
   event.preventDefault();
 
-
-
-  const cliente = document.getElementById('orcCliente').value.trim();
-
-  const veiculo = document.getElementById('orcVeiculo').value.trim();
-
+  const osId = document.getElementById('orcOS').value;
+  const os = AppData.ordens.find(ordem => String(ordem.id) === osId);
+  const dadosCliente = os
+    ? obterDadosClienteOS(os)
+    : { cliente: '', veiculo: '', placa: '' };
+  const cliente = dadosCliente.cliente;
+  const veiculo = dadosCliente.veiculo;
+  const placa = dadosCliente.placa;
   const observacao = document.getElementById('orcObservacao').value.trim();
+  const maoDeObra = Number(document.getElementById('orcMaoObra').value);
 
-
-
-  const selecionados = [
-
-    ...document.querySelectorAll('.orc-item-check:checked')
-
-  ];
-
-
-
-  if (!cliente || !veiculo || selecionados.length === 0) {
-
-    mostrarAlerta('Preencha os dados e selecione pelo menos uma peça.');
-
+  if (!os || !cliente || !veiculo || !placa) {
+    mostrarAlerta('Selecione uma ordem de serviço com os dados do cliente, veículo e placa.');
     return;
 
   }
 
-
-
-  const itens = [];
-
-
-
-  for (const check of selecionados) {
-
-    const id = Number(check.value);
-
-    const produto = AppData.estoque.find(p => p.id === id);
-
-
-
-    const quantidade = Number(
-
-      document.querySelector(`.orc-qtd[data-id="${id}"]`).value
-
-    );
-
-
-
-    const preco = Number(
-
-      document.querySelector(`.orc-preco[data-id="${id}"]`).value
-
-    );
-
-
-
-    if (
-
-      !produto ||
-
-      !Number.isInteger(quantidade) ||
-
-      quantidade < 1 ||
-
-      quantidade > produto.qtd ||
-
-      !Number.isFinite(preco) ||
-
-      preco < 0
-
-    ) {
-
-      mostrarAlerta('Confira as quantidades e os preços das peças.');
-
-      return;
-
-    }
-
-
-
-    itens.push({
-
-      estoqueId: id,
-
-      nome: produto.nome,
-
-      quantidade,
-
-      precoUnitario: preco,
-
-      subtotal: quantidade * preco
-
-    });
-
+  if (!Number.isFinite(maoDeObra) || maoDeObra < 0) {
+    mostrarAlerta('Informe um custo de mão de obra válido, igual ou maior que zero.');
+    return;
   }
 
+  const itens = obterItensOrcamentoOS(os);
+  if (itens.some(item =>
+    !Number.isInteger(item.quantidade)
+    || item.quantidade < 1
+    || !Number.isFinite(item.precoUnitario)
+    || item.precoUnitario < 0
+  )) {
+    mostrarAlerta('Confira os itens da ordem de serviço e seus preços antes de criar o orçamento.');
+    return;
+  }
 
-
-  const total = itens.reduce((soma, item) => soma + item.subtotal, 0);
-
-
-
+  const subtotalItens = arredondarMoeda(itens.reduce((soma, item) => soma + item.subtotal, 0));
+  const custoMaoDeObra = arredondarMoeda(maoDeObra);
   const orcamento = {
 
     id: AppData.contadorOrcamento++,
+
+    osId: os.id,
 
     cliente,
 
     veiculo,
 
+    placa,
+
     observacao,
 
     itens,
 
-    total,
+    subtotalItens,
+
+    maoDeObra: custoMaoDeObra,
+
+    total: arredondarMoeda(subtotalItens + custoMaoDeObra),
 
     status: 'Pendente',
 
@@ -2605,9 +2640,10 @@ function criarOrcamento(event) {
 
   salvarBD();
 
-  renderizarOrcamentos();
-
   document.getElementById('form-orcamento').reset();
+  renderizarItensOrcamento();
+  renderizarOrcamentos();
+  atualizarTotalOrcamento();
 
 
 
@@ -2627,49 +2663,36 @@ function renderizarItensOrcamento() {
 
   if (!container) return;
 
+  const seletor = document.getElementById('orcOS');
+  if (!seletor) return;
 
+  const osSelecionada = seletor.value;
+  const ordensAtivas = AppData.ordens.filter(os => obterStatusOS(os) !== STATUS_OS.CANCELADO);
+  seletor.innerHTML = `
+    <option value="">Selecione uma ordem de serviço</option>
+    ${ordensAtivas.map(os => {
+      const dados = obterDadosClienteOS(os);
+      const veiculo = [dados.veiculo, dados.placa].filter(Boolean).join(' - ');
+      return `<option value="${escaparHtml(os.id)}">OS #${escaparHtml(os.id)} — ${escaparHtml(dados.cliente)} — ${escaparHtml(veiculo)}</option>`;
+    }).join('')}
+  `;
+  if (ordensAtivas.some(os => String(os.id) === osSelecionada)) {
+    seletor.value = osSelecionada;
+  }
 
-  container.innerHTML = AppData.estoque.map(item => `
-
-    <div class="orc-peca">
-
-      <label>
-
-        <input type="checkbox" class="orc-item-check"
-
-          value="${item.id}">
-
-        <strong>${escaparHtml(item.nome)}</strong>
-
-      </label>
-
-
-
-      <small>Disponível: ${item.qtd}</small>
-
-
-
-      <label>Quantidade:</label>
-
-      <input type="number" class="orc-qtd"
-
-        data-id="${item.id}" min="1"
-
-        max="${item.qtd}" value="1">
-
-
-
-      <label>Preço unitário (R$):</label>
-
-      <input type="number" class="orc-preco"
-
-        data-id="${item.id}" min="0"
-
-        step="0.01" value="${Number(item.precoVenda || 0)}">
-
-    </div>
-
-  `).join('') || '<p>Nenhuma peça cadastrada.</p>';
+  const os = ordensAtivas.find(ordem => String(ordem.id) === seletor.value);
+  const itens = obterItensOrcamentoOS(os);
+  container.innerHTML = !os
+    ? '<p>Selecione uma ordem de serviço para carregar os itens.</p>'
+    : itens.length
+      ? itens.map(item => `
+        <div class="orc-peca">
+          <strong>${escaparHtml(item.nome)}</strong>
+          <span>${item.quantidade} × ${Number.isFinite(item.precoUnitario) ? formatarPrecoEstoque(item.precoUnitario) : 'Preço indisponível'}</span>
+          <strong>${Number.isFinite(item.subtotal) ? formatarPrecoEstoque(item.subtotal) : 'Subtotal indisponível'}</strong>
+        </div>
+      `).join('')
+      : '<p>Esta ordem de serviço não possui itens vinculados; o orçamento poderá incluir apenas a mão de obra.</p>';
 
 }
 
@@ -2685,25 +2708,33 @@ function renderizarOrcamentos() {
 
   if (!container) return;
 
-
-
-  container.innerHTML = AppData.orcamentos.map(orc => `
+  container.innerHTML = AppData.orcamentos.map(orc => {
+    const itens = Array.isArray(orc.itens) ? orc.itens : [];
+    const subtotalItens = Number.isFinite(Number(orc.subtotalItens))
+      ? Number(orc.subtotalItens)
+      : itens.reduce((soma, item) => soma + (Number(item.subtotal) || 0), 0);
+    const maoDeObra = Number(orc.maoDeObra) || 0;
+    const total = Number.isFinite(Number(orc.total))
+      ? Number(orc.total)
+      : subtotalItens + maoDeObra;
+    const veiculoPlaca = [orc.veiculo, orc.placa].filter(Boolean).join(' - ');
+    return `
 
     <div class="card-orcamento">
 
       <h3>Orçamento #${orc.id}</h3>
 
-
+      ${orc.osId ? `<p><strong>Ordem de serviço:</strong> #${escaparHtml(orc.osId)}</p>` : ''}
 
       <p><strong>Cliente:</strong> ${escaparHtml(orc.cliente)}</p>
 
-      <p><strong>Veículo:</strong> ${escaparHtml(orc.veiculo)}</p>
+      <p><strong>Veículo e placa:</strong> ${escaparHtml(veiculoPlaca)}</p>
 
 
 
       <ul>
 
-        ${orc.itens.map(item => `
+        ${itens.map(item => `
 
           <li>
 
@@ -2711,9 +2742,9 @@ function renderizarOrcamentos() {
 
             ${item.quantidade} x
 
-            R$ ${item.precoUnitario.toFixed(2)} =
+            ${formatarPrecoEstoque(Number(item.precoUnitario) || 0)} =
 
-            R$ ${item.subtotal.toFixed(2)}
+            ${formatarPrecoEstoque(Number(item.subtotal) || 0)}
 
           </li>
 
@@ -2721,9 +2752,11 @@ function renderizarOrcamentos() {
 
       </ul>
 
+      <p><strong>Subtotal dos itens:</strong> ${formatarPrecoEstoque(subtotalItens)}</p>
 
+      <p><strong>Mão de obra:</strong> ${formatarPrecoEstoque(maoDeObra)}</p>
 
-      <h3>Total: R$ ${orc.total.toFixed(2)}</h3>
+      <h3>Total: ${formatarPrecoEstoque(total)}</h3>
 
 
 
@@ -2755,7 +2788,8 @@ function renderizarOrcamentos() {
 
     </div>
 
-  `).join('') || '<p>Nenhum orçamento cadastrado.</p>';
+  `;
+  }).join('') || '<p>Nenhum orçamento cadastrado.</p>';
 
 }
 
@@ -2781,58 +2815,49 @@ function alterarStatusOrcamento(id, status) {
 
   if (status === 'Aprovado') {
 
-    for (const item of orc.itens) {
+    const itens = Array.isArray(orc.itens) ? orc.itens : [];
+    const itensDaOS = Boolean(orc.osId);
 
-      const produto = AppData.estoque.find(
+    if (!itensDaOS) {
+      for (const item of itens) {
 
-        p => p.id === item.estoqueId
+        const produto = AppData.estoque.find(
+          p => p.id === item.estoqueId
+        );
 
-      );
+        if (!produto || produto.qtd < item.quantidade) {
 
+          mostrarAlerta(`Estoque insuficiente: ${item.nome}`);
 
+          return;
 
-      if (!produto || produto.qtd < item.quantidade) {
-
-        mostrarAlerta(`Estoque insuficiente: ${item.nome}`);
-
-        return;
+        }
 
       }
 
-    }
+      itens.forEach(item => {
 
+        const produto = AppData.estoque.find(
+          p => p.id === item.estoqueId
+        );
 
+        produto.qtd -= item.quantidade;
 
-    orc.itens.forEach(item => {
+      });
 
-      const produto = AppData.estoque.find(
+      orc.estoqueDebitado = true;
 
-        p => p.id === item.estoqueId
+      registrarHistorico(
+
+        'estoque',
+
+        'saída',
+
+        `Peças do orçamento #${id} retiradas do estoque após aprovação.`
 
       );
 
-
-
-      produto.qtd -= item.quantidade;
-
-    });
-
-
-
-    orc.estoqueDebitado = true;
-
-
-
-    registrarHistorico(
-
-      'estoque',
-
-      'saída',
-
-      `Peças do orçamento #${id} retiradas do estoque após aprovação.`
-
-    );
-
+    }
   }
 
 

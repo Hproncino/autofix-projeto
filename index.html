@@ -268,23 +268,35 @@
     <div id="orcamentos" class="page">
       <header class="page-header">
         <h1>Orçamentos</h1>
-        <p>Monte orçamentos com peças do estoque e acompanhe a aprovação dos clientes.</p>
+        <p>Selecione uma ordem de serviço, confira os itens e informe o custo de mão de obra.</p>
       </header>
 
       <section class="widget-card">
         <h3>Novo Orçamento</h3>
 
         <form id="form-orcamento" onsubmit="criarOrcamento(event)">
+          <div class="campo-grupo">
+            <label for="orcOS">Ordem de serviço / cliente agendado</label>
+            <select id="orcOS" onchange="selecionarOrdemOrcamento(this.value)" required>
+              <option value="">Selecione uma ordem de serviço</option>
+            </select>
+          </div>
+
           <div class="campos-duplos">
             <div class="campo-grupo">
               <label for="orcCliente">Nome do cliente</label>
-              <input type="text" id="orcCliente" placeholder="Nome completo" required>
+              <input type="text" id="orcCliente" placeholder="Preenchido pela ordem de serviço" required readonly>
             </div>
 
             <div class="campo-grupo">
               <label for="orcVeiculo">Veículo</label>
-              <input type="text" id="orcVeiculo" placeholder="Ex.: Honda Civic 2018" required>
+              <input type="text" id="orcVeiculo" placeholder="Preenchido pela ordem de serviço" required readonly>
             </div>
+          </div>
+
+          <div class="campo-grupo">
+            <label for="orcPlaca">Placa</label>
+            <input type="text" id="orcPlaca" placeholder="Preenchida pela ordem de serviço" required readonly>
           </div>
 
           <div class="campo-grupo">
@@ -292,9 +304,23 @@
             <textarea id="orcObservacao" rows="3" placeholder="Descreva os serviços ou informações adicionais"></textarea>
           </div>
 
-          <div class="campo-grupo">
-            <label>Peças e materiais do orçamento</label>
+          <section class="orc-itens-os" aria-labelledby="orc-itens-titulo">
+            <h4 id="orc-itens-titulo">Itens vinculados à ordem de serviço</h4>
             <div id="orc-lista-pecas"></div>
+          </section>
+
+          <div class="campo-grupo">
+            <label for="orcMaoObra">Custo de mão de obra (R$)</label>
+            <input type="number" id="orcMaoObra" min="0" step="0.01" value="0" oninput="atualizarTotalOrcamento()" required>
+          </div>
+
+          <div class="orc-total-previa" aria-live="polite">
+            <span>Subtotal dos itens</span>
+            <strong id="orcSubtotalItens">R$ 0,00</strong>
+            <span>Mão de obra</span>
+            <strong id="orcResumoMaoObra">R$ 0,00</strong>
+            <span>Total do orçamento</span>
+            <strong id="orcTotal">R$ 0,00</strong>
           </div>
 
           <button type="submit">Salvar Orçamento</button>

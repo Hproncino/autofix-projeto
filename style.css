@@ -1045,6 +1045,58 @@ form > button[type="submit"] {
   margin-top: 14px;
 }
 
+.orc-itens-os {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(15, 24, 35, 0.75);
+  border: 1px solid rgba(247, 209, 45, 0.2);
+  border-radius: 12px;
+}
+
+.orc-itens-os h4 {
+  margin-bottom: 12px;
+  color: var(--yellow);
+}
+
+.orc-peca {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(247, 209, 45, 0.12);
+  color: var(--muted-strong);
+}
+
+.orc-peca:last-child {
+  border-bottom: 0;
+}
+
+.orc-total-previa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px 16px;
+  margin: 16px 0;
+  padding: 14px 16px;
+  background: rgba(15, 24, 35, 0.75);
+  border: 1px solid rgba(247, 209, 45, 0.2);
+  border-radius: 12px;
+}
+
+.orc-total-previa span {
+  color: var(--muted-strong);
+}
+
+.orc-total-previa strong {
+  color: var(--yellow-soft);
+  text-align: right;
+}
+
+.orc-total-previa strong:last-child {
+  color: var(--yellow);
+  font-size: 1.1rem;
+}
+
 .card-agenda {
   border: 1px solid rgba(247, 209, 45, 0.2);
   border-radius: 12px;
@@ -1531,6 +1583,11 @@ th {
   .estoque-formulario h3,
   .estoque-formulario .preco-demonstrativo-nota {
     grid-column: auto;
+  }
+
+  .orc-peca {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 }
 
