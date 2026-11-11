@@ -331,8 +331,28 @@
         <div class="widget-header">
           <h3>Orçamentos cadastrados</h3>
         </div>
+        <div class="filtros filtros-orcamentos" role="group" aria-label="Filtrar orçamentos por status">
+          <button type="button" class="btn-filtro active" onclick="filtrarOrcamentos('todos', this)">Todos</button>
+          <button type="button" class="btn-filtro" onclick="filtrarOrcamentos('Pendente', this)">Pendentes</button>
+          <button type="button" class="btn-filtro" onclick="filtrarOrcamentos('Aprovado', this)">Aprovados</button>
+          <button type="button" class="btn-filtro" onclick="filtrarOrcamentos('Recusado', this)">Recusados</button>
+        </div>
         <div id="lista-orcamentos" class="cards-vertical"></div>
       </section>
+    </div>
+
+    <!-- MODAL DETALHES ORÇAMENTO -->
+    <div id="modal-detalhes-orcamento" class="modal-os" role="dialog" aria-modal="true" aria-labelledby="modal-orcamento-titulo" hidden onclick="if(event.target === this) fecharDetalhesOrcamento()">
+      <div class="modal-os-conteudo">
+        <div class="modal-os-cabecalho">
+          <div>
+            <span class="modal-os-legenda">Detalhes do orçamento</span>
+            <h2 id="modal-orcamento-titulo"></h2>
+          </div>
+          <button type="button" class="modal-os-fechar" onclick="fecharDetalhesOrcamento()" aria-label="Fechar detalhes do orçamento">×</button>
+        </div>
+        <div id="modal-orcamento-detalhes" class="modal-os-detalhes"></div>
+      </div>
     </div>
 
     <!-- ORDENS DE SERVIÇO -->

@@ -1045,6 +1045,143 @@ form > button[type="submit"] {
   margin-top: 14px;
 }
 
+.filtros-orcamentos {
+  margin: 16px 0 0;
+}
+
+.orcamento-lista-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  text-align: left;
+  background: rgba(15, 24, 35, 0.75);
+  border: 1px solid rgba(247, 209, 45, 0.2);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.orcamento-lista-item:hover,
+.orcamento-lista-item:focus-visible {
+  border-color: var(--yellow);
+  background: rgba(247, 209, 45, 0.08);
+}
+
+.orcamento-lista-identificacao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+  min-width: 0;
+}
+
+.orcamento-lista-identificacao strong {
+  color: var(--yellow);
+}
+
+.orcamento-lista-identificacao > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.orcamento-status {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.orcamento-status.pendente {
+  background: rgba(247, 209, 45, 0.12);
+  color: var(--yellow);
+}
+
+.orcamento-status.aprovado {
+  background: rgba(58, 210, 143, 0.12);
+  color: var(--success);
+}
+
+.orcamento-status.recusado {
+  background: rgba(255, 93, 93, 0.12);
+  color: var(--danger);
+}
+
+.orcamentos-vazio {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
+.orcamento-modal-itens {
+  margin-top: 20px;
+}
+
+.orcamento-modal-itens h3 {
+  margin-bottom: 10px;
+  color: var(--yellow);
+  font-size: 1rem;
+}
+
+.orcamento-modal-lista {
+  display: grid;
+  gap: 8px;
+}
+
+.orcamento-modal-item,
+.orcamento-modal-totais p {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0;
+  padding: 10px 12px;
+  background: rgba(15, 24, 35, 0.72);
+  border-radius: 8px;
+}
+
+.orcamento-modal-item small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.orcamento-modal-item strong,
+.orcamento-modal-totais strong {
+  color: var(--muted-strong);
+  white-space: nowrap;
+}
+
+.orcamento-modal-totais {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.orcamento-modal-totais p {
+  align-items: center;
+  color: var(--muted-strong);
+}
+
+.orcamento-modal-totais .orcamento-modal-total {
+  border: 1px solid var(--stroke-soft);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.orcamento-modal-total strong {
+  color: var(--yellow);
+  font-size: 1.05rem;
+}
+
+.orcamento-modal-acoes {
+  padding-top: 14px;
+  border-top: 1px solid var(--stroke-soft);
+}
+
 .orc-itens-os {
   margin-top: 16px;
   padding: 16px;
@@ -1588,6 +1725,15 @@ th {
   .orc-peca {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .orcamento-lista-item {
+    align-items: flex-start;
+  }
+
+  .orcamento-lista-identificacao {
+    flex-direction: column;
+    gap: 4px;
   }
 }
 

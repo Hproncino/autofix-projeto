@@ -287,6 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       fecharDetalhesOS();
 
+      fecharDetalhesOrcamento();
+
       fecharConfirmacao();
 
       fecharEdicaoEstoque();
@@ -2702,95 +2704,101 @@ function renderizarItensOrcamento() {
 
 // Listar orçamentos
 
+let filtroOrcamentoAtual = 'todos';
+
+function filtrarOrcamentos(status, botao) {
+  filtroOrcamentoAtual = status;
+  document.querySelectorAll('.filtros-orcamentos .btn-filtro').forEach(item => {
+    item.classList.toggle('active', item === botao);
+  });
+  renderizarOrcamentos();
+}
+
 function renderizarOrcamentos() {
-
   const container = document.getElementById('lista-orcamentos');
-
   if (!container) return;
 
-  container.innerHTML = AppData.orcamentos.map(orc => {
-    const itens = Array.isArray(orc.itens) ? orc.itens : [];
-    const subtotalItens = Number.isFinite(Number(orc.subtotalItens))
-      ? Number(orc.subtotalItens)
-      : itens.reduce((soma, item) => soma + (Number(item.subtotal) || 0), 0);
-    const maoDeObra = Number(orc.maoDeObra) || 0;
-    const total = Number.isFinite(Number(orc.total))
-      ? Number(orc.total)
-      : subtotalItens + maoDeObra;
-    const veiculoPlaca = [orc.veiculo, orc.placa].filter(Boolean).join(' - ');
+  const orcamentos = AppData.orcamentos.filter(orc =>
+    filtroOrcamentoAtual === 'todos' || orc.status === filtroOrcamentoAtual
+  );
+  container.innerHTML = orcamentos.map(orc => {
+    const classeStatus = {
+      Pendente: 'pendente',
+      Aprovado: 'aprovado',
+      Recusado: 'recusado'
+    }[orc.status] || 'pendente';
     return `
+      <button type="button" class="orcamento-lista-item" onclick="abrirDetalhesOrcamento(${Number(orc.id)})" aria-label="Abrir orçamento ${escaparHtml(orc.id)} de ${escaparHtml(orc.cliente)}">
+        <span class="orcamento-lista-identificacao">
+          <strong>Orçamento #${escaparHtml(orc.id)}</strong>
+          <span>${escaparHtml(orc.cliente)}</span>
+        </span>
+        <span class="orcamento-status ${classeStatus}">${escaparHtml(orc.status)}</span>
+      </button>
+    `;
+  }).join('') || `<p class="orcamentos-vazio">${filtroOrcamentoAtual === 'todos' ? 'Nenhum orçamento cadastrado.' : `Nenhum orçamento com status "${escaparHtml(filtroOrcamentoAtual)}".`}</p>`;
+}
 
-    <div class="card-orcamento">
+function abrirDetalhesOrcamento(id) {
+  const orc = AppData.orcamentos.find(item => item.id === id);
+  if (!orc) return;
 
-      <h3>Orçamento #${orc.id}</h3>
+  const itens = Array.isArray(orc.itens) ? orc.itens : [];
+  const subtotalItens = Number.isFinite(Number(orc.subtotalItens))
+    ? Number(orc.subtotalItens)
+    : itens.reduce((soma, item) => soma + (Number(item.subtotal) || 0), 0);
+  const maoDeObra = Number(orc.maoDeObra) || 0;
+  const total = Number.isFinite(Number(orc.total))
+    ? Number(orc.total)
+    : subtotalItens + maoDeObra;
+  const veiculoPlaca = [orc.veiculo, orc.placa].filter(Boolean).join(' - ');
+  const modal = document.getElementById('modal-detalhes-orcamento');
 
-      ${orc.osId ? `<p><strong>Ordem de serviço:</strong> #${escaparHtml(orc.osId)}</p>` : ''}
-
-      <p><strong>Cliente:</strong> ${escaparHtml(orc.cliente)}</p>
-
-      <p><strong>Veículo e placa:</strong> ${escaparHtml(veiculoPlaca)}</p>
-
-
-
-      <ul>
-
-        ${itens.map(item => `
-
-          <li>
-
-            ${escaparHtml(item.nome)} -
-
-            ${item.quantidade} x
-
-            ${formatarPrecoEstoque(Number(item.precoUnitario) || 0)} =
-
-            ${formatarPrecoEstoque(Number(item.subtotal) || 0)}
-
-          </li>
-
-        `).join('')}
-
-      </ul>
-
-      <p><strong>Subtotal dos itens:</strong> ${formatarPrecoEstoque(subtotalItens)}</p>
-
-      <p><strong>Mão de obra:</strong> ${formatarPrecoEstoque(maoDeObra)}</p>
-
-      <h3>Total: ${formatarPrecoEstoque(total)}</h3>
-
-
-
-      <p>Status: <strong>${escaparHtml(orc.status)}</strong></p>
-
-
-
-      <p>${escaparHtml(orc.observacao || '')}</p>
-
-
-
-      ${orc.status === 'Pendente' ? `
-
-        <button onclick="alterarStatusOrcamento(${orc.id}, 'Aprovado')">
-
-          Aprovar
-
-        </button>
-
-
-
-        <button onclick="alterarStatusOrcamento(${orc.id}, 'Recusado')">
-
-          Recusar
-
-        </button>
-
-      ` : ''}
-
+  document.getElementById('modal-orcamento-titulo').textContent = `Orçamento #${orc.id}`;
+  document.getElementById('modal-orcamento-detalhes').innerHTML = `
+    <div class="modal-os-grade">
+      ${orc.osId ? `<div><span>Ordem de serviço</span><strong>#${escaparHtml(orc.osId)}</strong></div>` : ''}
+      <div><span>Cliente</span><strong>${escaparHtml(orc.cliente)}</strong></div>
+      <div><span>Veículo e placa</span><strong>${escaparHtml(veiculoPlaca)}</strong></div>
+      <div><span>Status</span><strong class="orcamento-status-texto">${escaparHtml(orc.status)}</strong></div>
     </div>
-
+    <section class="orcamento-modal-itens">
+      <h3>Itens do orçamento</h3>
+      ${itens.length ? `
+        <div class="orcamento-modal-lista">
+          ${itens.map(item => `
+            <div class="orcamento-modal-item">
+              <span>${escaparHtml(item.nome)} <small>${Number(item.quantidade) || 0} × ${formatarPrecoEstoque(Number(item.precoUnitario) || 0)}</small></span>
+              <strong>${formatarPrecoEstoque(Number(item.subtotal) || 0)}</strong>
+            </div>
+          `).join('')}
+        </div>
+      ` : '<p>Sem itens vinculados.</p>'}
+      <div class="orcamento-modal-totais">
+        <p><span>Subtotal dos itens</span><strong>${formatarPrecoEstoque(subtotalItens)}</strong></p>
+        <p><span>Mão de obra</span><strong>${formatarPrecoEstoque(maoDeObra)}</strong></p>
+        <p class="orcamento-modal-total"><span>Total</span><strong>${formatarPrecoEstoque(total)}</strong></p>
+      </div>
+    </section>
+    ${orc.observacao ? `<div class="modal-os-bloco"><span>Observações</span><p>${escaparHtml(orc.observacao)}</p></div>` : ''}
+    ${orc.status === 'Pendente' ? `
+      <div class="modal-confirmacao-acoes orcamento-modal-acoes">
+        <button type="button" class="btn-confirmacao btn-cancelar" onclick="alterarStatusOrcamento(${Number(orc.id)}, 'Recusado')">Recusar</button>
+        <button type="button" class="btn-confirmacao" onclick="alterarStatusOrcamento(${Number(orc.id)}, 'Aprovado')">Aprovar</button>
+      </div>
+    ` : ''}
   `;
-  }).join('') || '<p>Nenhum orçamento cadastrado.</p>';
 
+  modal.hidden = false;
+  document.body.classList.add('modal-aberto');
+  modal.querySelector('.modal-os-fechar').focus();
+}
+
+function fecharDetalhesOrcamento() {
+  const modal = document.getElementById('modal-detalhes-orcamento');
+  if (!modal || modal.hidden) return;
+  modal.hidden = true;
+  document.body.classList.remove('modal-aberto');
 }
 
 
@@ -2800,8 +2808,25 @@ function renderizarOrcamentos() {
 // Aprovar ou recusar orçamento
 
 function alterarStatusOrcamento(id, status) {
+  const orc = AppData.orcamentos.find(item => item.id === id);
+  if (!orc || orc.status !== 'Pendente') return;
+  if (!['Aprovado', 'Recusado'].includes(status)) return;
 
+  const acao = status === 'Aprovado' ? 'aprovação' : 'recusa';
+  abrirConfirmacao(
+    `Confirma a ${acao} do orçamento #${orc.id}, de ${orc.cliente}?`,
+    () => confirmarStatusOrcamento(id, status),
+    {
+      titulo: `Confirmar ${acao} do orçamento`,
+      confirmarTexto: status === 'Aprovado' ? 'Aprovar orçamento' : 'Recusar orçamento',
+      classeConfirmar: status === 'Recusado' ? 'btn-confirmar-perigo' : ''
+    }
+  );
+}
+
+function confirmarStatusOrcamento(id, status) {
   const orc = AppData.orcamentos.find(o => o.id === id);
+  const modalAberto = !document.getElementById('modal-detalhes-orcamento')?.hidden;
 
 
 
@@ -2883,6 +2908,7 @@ function alterarStatusOrcamento(id, status) {
   renderizarTudo();
 
   renderizarOrcamentos();
+  if (modalAberto) abrirDetalhesOrcamento(id);
 
 }
 
