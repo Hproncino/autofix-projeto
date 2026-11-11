@@ -8,78 +8,71 @@
 </head>
 <body>
 
-  <!-- Menu Lateral -->
+  <!-- MENU LATERAL -->
   <div class="sidebar">
-    <div class="brand">      <div class="brand-text">
+    <div class="brand">
+      <div class="brand-text">
         <span id="logo-empresa">AutoFix</span>
         <small>Oficina</small>
       </div>
     </div>
 
     <nav class="menu">
-      <a class="active" onclick="mudar('dash', this)">
-        Dashboard
-      </a>
-      <a onclick="mudar('agenda', this)">
-        Agendamentos
-      </a>
-      <a onclick="mudar('os', this)">
-        Ordem de Serviço
-      </a>
-      <a onclick="mudar('estoque', this)">
-        Estoque
-      </a>
-      <a onclick="mudar('historico', this)">
-        Histórico
-      </a>
-      <a onclick="mudar('config', this)">
-        Configurações
-      </a>
+      <a class="active" onclick="mudar('dash', this)">Dashboard</a>
+      <a onclick="mudar('agenda', this)">Agendamentos</a>
+      <a onclick="mudar('orcamentos', this)">Orçamentos</a>
+      <a onclick="mudar('os', this)">Ordem de Serviço</a>
+      <a onclick="mudar('estoque', this)">Estoque</a>
+      <a onclick="mudar('historico', this)">Histórico</a>
+      <a onclick="mudar('config', this)">Configurações</a>
     </nav>
   </div>
 
   <div class="content">
 
-    <!-- Tela 1: Dashboard Redesenhado e Dinâmico -->
+    <!-- DASHBOARD -->
     <div id="dash" class="page active">
       <header class="page-header">
         <h1>Visão Geral Operacional</h1>
         <p>Acompanhamento em tempo real dos indicadores do seu pátio e estoque.</p>
       </header>
 
-      <!-- Métricas em Cards Modernos -->
       <div class="metrics-grid">
-        <div class="metric-card">          <div class="metric-data">
+        <div class="metric-card">
+          <div class="metric-data">
             <span class="metric-title">Agendamentos Ativos</span>
             <b id="dash-qtd-agenda" class="metric-value">0</b>
           </div>
         </div>
 
-        <div class="metric-card">          <div class="metric-data">
+        <div class="metric-card">
+          <div class="metric-data">
             <span class="metric-title">Total de Ordens (OS)</span>
             <b id="dash-total-os" class="metric-value">0</b>
           </div>
         </div>
 
-        <div class="metric-card warning">          <div class="metric-data">
+        <div class="metric-card warning">
+          <div class="metric-data">
             <span class="metric-title">Itens em Alerta</span>
             <b id="dash-pecas-alerta" class="metric-value">0</b>
           </div>
         </div>
 
-        <div class="metric-card">          <div class="metric-data">
+        <div class="metric-card">
+          <div class="metric-data">
             <span class="metric-title">OS Concluídas</span>
             <b id="dash-os-concluidas" class="metric-value">0</b>
           </div>
         </div>
       </div>
 
-      <!-- Seção do Gráfico e Resumo -->
       <div class="dashboard-widgets">
         <div class="widget-card">
           <div class="widget-header">
             <h3>Distribuição por Status das OS</h3>
           </div>
+
           <div class="progress-list">
             <div class="progress-item">
               <div class="progress-info">
@@ -133,7 +126,6 @@
           </div>
         </div>
 
-        <!-- Widget Informativo -->
         <div class="widget-card info-widget">
           <h3>Resumo do Sistema</h3>
           <p>Toda alteração de status em <b>Ordens</b> ou inclusão em <b>Estoque</b> recarrega o gráfico automaticamente.</p>
@@ -142,7 +134,6 @@
             <span class="status-pill online">Salvamento Ativo (Local)</span>
           </div>
         </div>
-
       </div>
 
       <div class="dashboard-agenda-widgets">
@@ -168,13 +159,13 @@
       </div>
     </div>
 
-    <!-- Tela 2: Agendamento -->
+    <!-- AGENDAMENTOS -->
     <div id="agenda" class="page">
       <header class="page-header">
         <h1>Agendamentos</h1>
         <p>Gerencie os agendamentos de serviço da oficina de forma prática e rápida.</p>
       </header>
-      
+
       <div class="grid-agendamento">
         <form onsubmit="salvarAgendamento(event)">
           <div class="form-titulo">
@@ -186,6 +177,7 @@
             <label for="agCpf">CPF do cliente</label>
             <input type="text" id="agCpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14" required>
           </div>
+
           <div class="campo-grupo">
             <label for="agNome">Nome completo</label>
             <input type="text" id="agNome" placeholder="Nome do cliente" autocomplete="name" required>
@@ -196,6 +188,7 @@
               <label for="agVeiculo">Modelo do veículo</label>
               <input type="text" id="agVeiculo" placeholder="Ex.: Honda Civic" required>
             </div>
+
             <div class="campo-grupo">
               <label for="agPlaca">Placa</label>
               <input type="text" id="agPlaca" placeholder="ABC1D23" maxlength="7" required>
@@ -215,22 +208,23 @@
           <div class="campo-grupo">
             <label for="agTipo">Serviço desejado</label>
             <select id="agTipo" required onchange="alternarServicoCustomizado()">
-            <option value="" disabled selected>Selecione o Tipo de Serviço</option>
-            <option value="Revisão Geral">Revisão Geral</option>
-            <option value="Diagnóstico / Barulho">Diagnóstico / Barulho</option>
-            <option value="Troca de Óleo / Filtros">Troca de Óleo / Filtros</option>
-            <option value="Sistema de Freios">Sistema de Freios</option>
-            <option value="Suspensão / Alinhamento">Suspensão / Alinhamento</option>
-            <option value="Ar-condicionado">Ar-condicionado</option>
-            <option value="Bateria e Elétrica">Bateria e Elétrica</option>
-            <option value="Injeção Eletrônica">Injeção Eletrônica</option>
-            <option value="Motor e Câmbio">Motor e Câmbio</option>
-            <option value="Funilaria e Pintura">Funilaria e Pintura</option>
-            <option value="Pneus e Rodas">Pneus e Rodas</option>
-            <option value="Higienização">Higienização</option>
-            <option value="customizado">Serviço customizado</option>
+              <option value="" disabled selected>Selecione o Tipo de Serviço</option>
+              <option value="Revisão Geral">Revisão Geral</option>
+              <option value="Diagnóstico / Barulho">Diagnóstico / Barulho</option>
+              <option value="Troca de Óleo / Filtros">Troca de Óleo / Filtros</option>
+              <option value="Sistema de Freios">Sistema de Freios</option>
+              <option value="Suspensão / Alinhamento">Suspensão / Alinhamento</option>
+              <option value="Ar-condicionado">Ar-condicionado</option>
+              <option value="Bateria e Elétrica">Bateria e Elétrica</option>
+              <option value="Injeção Eletrônica">Injeção Eletrônica</option>
+              <option value="Motor e Câmbio">Motor e Câmbio</option>
+              <option value="Funilaria e Pintura">Funilaria e Pintura</option>
+              <option value="Pneus e Rodas">Pneus e Rodas</option>
+              <option value="Higienização">Higienização</option>
+              <option value="customizado">Serviço customizado</option>
             </select>
           </div>
+
           <div id="campo-servico-customizado" class="campo-grupo campo-customizado" hidden>
             <label for="agTipoCustomizado">Descreva o serviço</label>
             <input type="text" id="agTipoCustomizado" placeholder="Ex.: Instalação de acessórios">
@@ -240,6 +234,7 @@
             <label for="agDefeito">Detalhes ou sintomas relatados</label>
             <textarea id="agDefeito" placeholder="Conte o que precisa ser verificado no veículo" rows="3" required></textarea>
           </div>
+
           <div class="itens-agendamento">
             <div class="itens-cabecalho">
               <div>
@@ -248,13 +243,17 @@
               </div>
               <span id="contador-itens-agenda" class="contador-itens">0 selecionados</span>
             </div>
+
             <p>Selecione os itens que serão utilizados. Eles serão descontados do estoque ao criar a OS.</p>
+
             <div class="busca-itens">
               <span class="busca-itens-icone">⌕</span>
               <input type="search" id="busca-itens-agenda" placeholder="Buscar item por nome..." oninput="filtrarItens('agenda', this.value)" autocomplete="off">
             </div>
+
             <div id="itens-disponiveis-agenda" class="itens-lista"></div>
           </div>
+
           <button type="submit">Confirmar e Gerar OS</button>
         </form>
 
@@ -265,13 +264,58 @@
       </div>
     </div>
 
-    <!-- Tela 3: Ordens de Serviço -->
+    <!-- ORÇAMENTOS -->
+    <div id="orcamentos" class="page">
+      <header class="page-header">
+        <h1>Orçamentos</h1>
+        <p>Monte orçamentos com peças do estoque e acompanhe a aprovação dos clientes.</p>
+      </header>
+
+      <section class="widget-card">
+        <h3>Novo Orçamento</h3>
+
+        <form id="form-orcamento" onsubmit="criarOrcamento(event)">
+          <div class="campos-duplos">
+            <div class="campo-grupo">
+              <label for="orcCliente">Nome do cliente</label>
+              <input type="text" id="orcCliente" placeholder="Nome completo" required>
+            </div>
+
+            <div class="campo-grupo">
+              <label for="orcVeiculo">Veículo</label>
+              <input type="text" id="orcVeiculo" placeholder="Ex.: Honda Civic 2018" required>
+            </div>
+          </div>
+
+          <div class="campo-grupo">
+            <label for="orcObservacao">Observações</label>
+            <textarea id="orcObservacao" rows="3" placeholder="Descreva os serviços ou informações adicionais"></textarea>
+          </div>
+
+          <div class="campo-grupo">
+            <label>Peças e materiais do orçamento</label>
+            <div id="orc-lista-pecas"></div>
+          </div>
+
+          <button type="submit">Salvar Orçamento</button>
+        </form>
+      </section>
+
+      <section class="widget-card">
+        <div class="widget-header">
+          <h3>Orçamentos cadastrados</h3>
+        </div>
+        <div id="lista-orcamentos" class="cards-vertical"></div>
+      </section>
+    </div>
+
+    <!-- ORDENS DE SERVIÇO -->
     <div id="os" class="page">
       <header class="page-header">
         <h1>Ordens de Serviço</h1>
         <p>Gerencie as ordens de serviço da oficina de forma prática e eficiente.</p>
       </header>
-      
+
       <div class="filtros">
         <button class="btn-filtro active" onclick="filtrarOS('todos', this)">Todos</button>
         <button class="btn-filtro" onclick="filtrarOS('Stand By', this)">Stand By</button>
@@ -286,24 +330,23 @@
         <input type="search" id="busca-os" placeholder="Digite o nome, CPF, carro ou placa..." oninput="buscarOS(this.value)" autocomplete="off">
       </div>
 
-      <div class="tabela-os-scroll" role="region" aria-label="Ordens de serviço" tabindex="0">
-        <table id="tabela-os">
-          <thead>
-            <tr>
-              <th>Nº OS</th>
-              <th>Cliente / Veículo</th>
-              <th>Serviço Solicitado</th>
-              <th>Emitido por</th>
-              <th>Prazo previsto</th>
-              <th>Status (Alterar)</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="corpo-tabela-os"></tbody>
-        </table>
-      </div>
+      <table id="tabela-os">
+        <thead>
+          <tr>
+            <th>Nº OS</th>
+            <th>Cliente / Veículo</th>
+            <th>Serviço Solicitado</th>
+            <th>Emitido por</th>
+            <th>Prazo previsto</th>
+            <th>Status (Alterar)</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="corpo-tabela-os"></tbody>
+      </table>
     </div>
 
+    <!-- MODAL DETALHES OS -->
     <div id="modal-detalhes-os" class="modal-os" role="dialog" aria-modal="true" aria-labelledby="modal-os-titulo" hidden>
       <div class="modal-os-conteudo">
         <div class="modal-os-cabecalho">
@@ -317,6 +360,7 @@
       </div>
     </div>
 
+    <!-- MODAL CONFIRMAÇÃO -->
     <div id="modal-confirmacao" class="modal-os" role="dialog" aria-modal="true" aria-labelledby="modal-confirmacao-titulo" aria-describedby="modal-confirmacao-mensagem" hidden>
       <div class="modal-os-conteudo modal-confirmacao-conteudo">
         <div class="modal-os-cabecalho">
@@ -326,6 +370,7 @@
           </div>
           <button type="button" class="modal-os-fechar" onclick="fecharConfirmacao()" aria-label="Fechar confirmação">×</button>
         </div>
+
         <div class="modal-confirmacao-corpo">
           <p id="modal-confirmacao-mensagem"></p>
           <div id="modal-confirmacao-acoes" class="modal-confirmacao-acoes"></div>
@@ -333,6 +378,7 @@
       </div>
     </div>
 
+    <!-- MODAL EDIÇÃO ESTOQUE -->
     <div id="modal-edicao-estoque" class="modal-os" role="dialog" aria-modal="true" aria-labelledby="modal-edicao-estoque-titulo" hidden>
       <div class="modal-os-conteudo modal-edicao-estoque-conteudo">
         <div class="modal-os-cabecalho">
@@ -342,15 +388,23 @@
           </div>
           <button type="button" class="modal-os-fechar" onclick="fecharEdicaoEstoque()" aria-label="Fechar edição">×</button>
         </div>
+
         <form id="form-edicao-estoque" class="form-edicao-estoque" onsubmit="confirmarEdicaoEstoque(event)">
           <div class="campo-grupo">
             <label for="edicao-nome-estoque">Nome do item</label>
             <input type="text" id="edicao-nome-estoque" required>
           </div>
+
           <div class="campo-grupo">
             <label for="edicao-qtd-estoque">Quantidade</label>
             <input type="number" id="edicao-qtd-estoque" min="0" step="1" required>
           </div>
+
+          <div class="campo-grupo">
+            <label for="edicao-preco-estoque">Preço unitário demonstrativo (R$)</label>
+            <input type="number" id="edicao-preco-estoque" min="0.01" step="0.01" required>
+          </div>
+
           <div class="modal-confirmacao-acoes">
             <button type="button" class="btn-confirmacao btn-cancelar" onclick="fecharEdicaoEstoque()">Cancelar</button>
             <button type="submit" class="btn-confirmacao">Continuar</button>
@@ -359,78 +413,26 @@
       </div>
     </div>
 
-    <!-- Tela 4: Estoque -->
+    <!-- CONTROLE DE ESTOQUE -->
     <div id="estoque" class="page">
       <header class="page-header">
         <h1>Controle de Estoque</h1>
         <p>Gerencie o estoque de peças e produtos da oficina.</p>
       </header>
 
-      <form onsubmit="adicionarEstoque(event)" class="form-inline">
+      <form onsubmit="adicionarEstoque(event)" class="form-inline estoque-formulario">
         <h3>Adicionar Item ao Estoque</h3>
-        <input type="text" id="nomeItem" placeholder="Nome da Peça" required>
-        <input type="number" id="qtdItem" placeholder="Quantidade Inicial" required>
+        <input type="text" id="nomeItem" placeholder="Nome da peça" aria-label="Nome da peça" required>
+        <input type="number" id="qtdItem" placeholder="Quantidade inicial" aria-label="Quantidade inicial" min="0" step="1" required>
+        <label class="preco-demonstrativo-campo" for="precoItem">
+          <span>Preço unitário demonstrativo (R$)</span>
+          <input type="number" id="precoItem" min="0.01" step="0.01" placeholder="Gerado automaticamente">
+        </label>
         <button type="submit">Incluir Item</button>
+        <small class="preco-demonstrativo-nota">O preço é apenas ilustrativo e pode ser informado ou gerado automaticamente.</small>
       </form>
 
       <div id="lista-estoque" class="grid-estoque"></div>
-    </div>
-
-    <!-- Tela 5: Histórico -->
-    <div id="historico" class="page">
-      <header class="page-header">
-        <h1>Histórico de alterações</h1>
-        <p>Consulte os registros de alterações em ordens de serviço, agendamentos e estoque.</p>
-      </header>
-
-      <section class="historico-painel" aria-labelledby="historico-titulo">
-        <div class="historico-cabecalho">
-          <div>
-            <span class="form-legenda">Registro permanente</span>
-            <h3 id="historico-titulo">Registro de atividades</h3>
-          </div>
-          <div class="historico-filtros">
-            <label>
-              <span>Filtrar por módulo</span>
-              <select id="filtro-historico-modulo" onchange="alterarFiltrosHistorico()">
-                <option value="todos">Todos os módulos</option>
-                <option value="ordens">Ordens de serviço</option>
-                <option value="agendamentos">Agendamentos</option>
-                <option value="estoque">Estoque</option>
-              </select>
-            </label>
-            <label>
-              <span>Filtrar por ação</span>
-              <select id="filtro-historico-acao" onchange="alterarFiltrosHistorico()">
-                <option value="todos">Todas as ações</option>
-                <option value="criação">Criação</option>
-                <option value="alteração">Alteração</option>
-                <option value="exclusão">Exclusão</option>
-                <option value="cancelamento">Cancelamento</option>
-              </select>
-            </label>
-          </div>
-        </div>
-        <div id="lista-historico" class="lista-historico" aria-live="polite"></div>
-        <nav id="paginacao-historico" class="paginacao-historico" aria-label="Paginação do histórico" hidden></nav>
-      </section>
-    </div>
-
-    <!-- Tela 6: Configurações -->
-    <div id="config" class="page">
-      <header class="page-header">
-        <h1>Configurações</h1>
-        <p>Gerencie as configurações da oficina, sistema e preferências do negócio.</p>
-      </header>
-      
-      <form onsubmit="salvarConfiguracoes(event)">
-        <h3>Dados da Empresa</h3>
-        <input type="text" id="cfgNome" placeholder="Nome Fantasia da Oficina" required>
-        <input type="text" id="cfgCnpj" placeholder="CNPJ" required>
-        <input type="tel" id="cfgTelefone" placeholder="Telefone / WhatsApp" required>
-        <input type="text" id="cfgEndereco" placeholder="Endereço Completo" required>
-        <button type="submit">Salvar Dados da Oficina</button>
-      </form>
     </div>
 
   </div>

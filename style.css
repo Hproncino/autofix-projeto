@@ -1126,17 +1126,6 @@ form > button[type="submit"] {
   color: #0a1017;
 }
 
-.tabela-os-scroll {
-  max-width: 100%;
-  overflow-x: auto;
-  border-radius: 12px;
-}
-
-#tabela-os {
-  width: 100%;
-  min-width: 760px;
-}
-
 table {
   width: 100%;
   border-collapse: collapse;
@@ -1178,6 +1167,23 @@ th {
 
 .card-item b {
   color: var(--yellow);
+}
+
+.preco-estoque {
+  margin: 8px 0 2px;
+  color: var(--muted-strong);
+  font-size: 0.9rem;
+}
+
+.preco-estoque strong {
+  color: var(--yellow-soft);
+}
+
+.preco-demonstrativo-nota {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.75rem;
 }
 
 .card-item .btn-deletar {
@@ -1301,14 +1307,6 @@ th {
   font-weight: 700;
 }
 
-.historico-descricao-complementar {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 0.78rem;
-  line-height: 1.45;
-}
-
 .historico-registro-rodape {
   justify-content: flex-start;
   margin-top: 6px;
@@ -1335,42 +1333,6 @@ th {
   padding: 28px 12px;
   color: var(--muted);
   text-align: center;
-}
-
-.paginacao-historico {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 18px;
-}
-
-.paginacao-historico[hidden] {
-  display: none;
-}
-
-.historico-pagina {
-  min-height: 36px;
-  padding: 7px 11px;
-  border: 1px solid var(--stroke-soft);
-  border-radius: 8px;
-  background: rgba(15, 24, 35, 0.66);
-  color: var(--muted-strong);
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.historico-pagina:hover:not(:disabled),
-.historico-pagina.active {
-  border-color: var(--yellow);
-  background: var(--yellow);
-  color: #0a1017;
-}
-
-.historico-pagina:disabled {
-  cursor: not-allowed;
-  opacity: 0.48;
 }
 
 .placeholder-panel {
@@ -1498,5 +1460,87 @@ th {
 
   .page-header h1 {
     font-size: 2.1rem;
+  }
+}
+
+/* =====================================
+   CONTROLE DE ESTOQUE - AUTOFIX
+===================================== */
+
+.estoque-formulario {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) minmax(140px, 0.7fr) minmax(210px, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(10, 18, 26, 0.8);
+  border: 1px solid var(--stroke-soft);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.estoque-formulario h3 {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.estoque-formulario input {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 12px;
+  border: 1px solid var(--stroke-soft);
+  border-radius: 8px;
+  background: rgba(15, 24, 35, 0.9);
+  color: var(--text);
+}
+
+.preco-demonstrativo-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--muted-strong);
+  font-size: 0.85rem;
+}
+
+.estoque-formulario .preco-demonstrativo-nota {
+  grid-column: 1 / -1;
+  margin-top: -6px;
+}
+
+.movimentacao-item {
+  padding: 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.movimentacao-item p {
+  margin: 5px 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.movimentacao-item small {
+  color: #64748b;
+}
+
+@media (max-width: 650px) {
+  .estoque-formulario {
+    grid-template-columns: 1fr;
+  }
+
+  .estoque-formulario h3,
+  .estoque-formulario .preco-demonstrativo-nota {
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 651px) and (max-width: 900px) {
+  .estoque-formulario {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .estoque-formulario h3,
+  .estoque-formulario .preco-demonstrativo-nota {
+    grid-column: 1 / -1;
   }
 }
