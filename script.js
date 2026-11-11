@@ -103,7 +103,7 @@ AppData.config ||= { ...dadosIniciais.config };
 AppData.agendamentos ||= [];
 AppData.ordens ||= [];
 AppData.estoque ||= [];
-AppData.historico ||= [];
+if (!Array.isArray(AppData.historico)) AppData.historico = [];
 AppData.orcamentos ||= [];
 AppData.movimentacoesEstoque ||= [];
 AppData.contadorOS ||= dadosIniciais.contadorOS;
@@ -2223,12 +2223,9 @@ function renderizarHistorico() {
 
   const acaoSelecionada = document.getElementById('filtro-historico-acao')?.value || 'todos';
 
-  const historico = (AppData.historico || []).filter(registro =>
-
+  const historico = AppData.historico.filter(registro =>
     (moduloSelecionado === 'todos' || registro.modulo === moduloSelecionado) &&
-
     (acaoSelecionada === 'todos' || registro.acao === acaoSelecionada)
-
   );
 
 
@@ -2297,6 +2294,9 @@ function renderizarHistorico() {
 
 }
 
+function alterarFiltrosHistorico() {
+  renderizarHistorico();
+}
 
 
 // Navegação entre abas
